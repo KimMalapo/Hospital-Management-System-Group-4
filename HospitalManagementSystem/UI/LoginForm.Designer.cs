@@ -31,9 +31,9 @@
             label1 = new Label();
             label2 = new Label();
             label3 = new Label();
-            this.btnLogin = new Button();
-            this.txtUsername = new TextBox();
             txtPassword = new TextBox();
+            txtUsername = new TextBox();
+            btnLogin = new Button();
             SuspendLayout();
             // 
             // label1
@@ -66,24 +66,6 @@
             label3.TabIndex = 2;
             label3.Text = "Password:";
             // 
-            // btnLogin
-            // 
-            this.btnLogin.Font = new Font("Segoe UI", 12F);
-            this.btnLogin.Location = new Point(140, 290);
-            this.btnLogin.Name = "btnLogin";
-            this.btnLogin.Size = new Size(124, 50);
-            this.btnLogin.TabIndex = 3;
-            this.btnLogin.Text = "LOGIN";
-            this.btnLogin.UseVisualStyleBackColor = true;
-            // 
-            // txtUsername
-            // 
-            this.txtUsername.Font = new Font("Segoe UI", 12F);
-            this.txtUsername.Location = new Point(129, 160);
-            this.txtUsername.Name = "txtUsername";
-            this.txtUsername.Size = new Size(246, 34);
-            this.txtUsername.TabIndex = 4;
-            // 
             // txtPassword
             // 
             txtPassword.Font = new Font("Segoe UI", 12F);
@@ -92,14 +74,31 @@
             txtPassword.Size = new Size(246, 34);
             txtPassword.TabIndex = 5;
             // 
+            // txtUsername
+            // 
+            txtUsername.Font = new Font("Segoe UI", 12F);
+            txtUsername.Location = new Point(129, 167);
+            txtUsername.Name = "txtUsername";
+            txtUsername.Size = new Size(246, 34);
+            txtUsername.TabIndex = 6;
+            // 
+            // btnLogin
+            // 
+            btnLogin.Location = new Point(140, 297);
+            btnLogin.Name = "btnLogin";
+            btnLogin.Size = new Size(136, 47);
+            btnLogin.TabIndex = 7;
+            btnLogin.Text = "LOGIN";
+            btnLogin.UseVisualStyleBackColor = true;
+            // 
             // LoginForm
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(412, 382);
+            Controls.Add(btnLogin);
+            Controls.Add(txtUsername);
             Controls.Add(txtPassword);
-            Controls.Add(this.txtUsername);
-            Controls.Add(this.btnLogin);
             Controls.Add(label3);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -117,5 +116,7 @@
         private Button button1;
         private TextBox textBox1;
         private TextBox txtPassword;
+        private TextBox txtUsername;
+        private Button btnLogin;
     }
 }
