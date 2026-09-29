@@ -48,7 +48,7 @@
             // 
             label1.AutoSize = true;
             label1.Font = new Font("Segoe UI Semibold", 19.8000011F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label1.Location = new Point(44, 28);
+            label1.Location = new Point(113, 33);
             label1.Name = "label1";
             label1.Size = new Size(287, 46);
             label1.TabIndex = 0;
@@ -197,7 +197,7 @@
             Controls.Add(label2);
             Controls.Add(label1);
             Name = "PatientInformationSearch";
-            Text = "PatientInformationSearch";
+            Text = "Patient Information Search";
             ResumeLayout(false);
             PerformLayout();
         }
