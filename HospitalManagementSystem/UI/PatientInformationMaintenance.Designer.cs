@@ -237,7 +237,7 @@
         private TextBox txtAddress;
         private ComboBox cbGender;
         private TextBox txtContactNo;
-        private Button button1;
+        private Button btnAdd;
         private Button btnUpdate;
         private Button btnDelete;
         private MaskedTextBox maskedTextBox1;

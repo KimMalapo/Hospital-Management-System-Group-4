@@ -193,15 +193,12 @@
 
         #endregion
 
-        private ListView listView1;
-        private ListView listView2;
-        private ListView listView3;
         private ListView listStatus;
         private Label label4;
         private Label label5;
         private Button btnAdd;
         private Button btnEdit;
-        private Button button3;
+
         private Button btnSearch;
         private ListView listRoomNo;
         private ListView listType;

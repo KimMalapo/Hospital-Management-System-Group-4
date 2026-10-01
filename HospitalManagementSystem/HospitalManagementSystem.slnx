@@ -1,9 +1,6 @@
 <Solution>
   <Project Path="BusinessLogic/BusinessLogic.csproj" />
-  <Project Path="DB/DB.sqlproj" Id="0f8a7a32-f5f9-4cbb-96c9-7be3275b6ecf">
-    <Build />
-    <Deploy />
-  </Project>
+  <!-- DB project removed from solution build to avoid SSDT/targets dependency on CI/CLI environments -->
   <Project Path="Model/Model.csproj" />
   <Project Path="UI/UI.csproj" />
 </Solution>

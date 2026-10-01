@@ -73,6 +73,16 @@
             txtPassword.Name = "txtPassword";
             txtPassword.Size = new Size(246, 34);
             txtPassword.TabIndex = 5;
+            txtPassword.UseSystemPasswordChar = true;
+            // show/hide password toggle
+            var btnToggle = new Button();
+            btnToggle.Size = new Size(30, 30);
+            btnToggle.Location = new Point(txtPassword.Right + 6, txtPassword.Top + 2);
+            btnToggle.Text = "👁";
+            btnToggle.TabIndex = 8;
+            btnToggle.Cursor = Cursors.Hand;
+            btnToggle.Click += (s, e) => { txtPassword.UseSystemPasswordChar = !txtPassword.UseSystemPasswordChar; };
+            // add the toggle after controls are added
             // 
             // txtUsername
             // 
@@ -90,6 +100,13 @@
             btnLogin.TabIndex = 7;
             btnLogin.Text = "LOGIN";
             btnLogin.UseVisualStyleBackColor = true;
+            btnLogin.Click += new EventHandler(btnLogin_Click);
+            // add register link
+            var linkRegister = new LinkLabel();
+            linkRegister.Text = "Register";
+            linkRegister.Location = new Point(290, 305);
+            linkRegister.AutoSize = true;
+            linkRegister.Click += (s, e) => { var r = new RegisterForm(); r.ShowDialog(); };
             // 
             // LoginForm
             // 
@@ -99,6 +116,7 @@
             Controls.Add(btnLogin);
             Controls.Add(txtUsername);
             Controls.Add(txtPassword);
+            Controls.Add(btnToggle);
             Controls.Add(label3);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -113,8 +131,6 @@
         private Label label1;
         private Label label2;
         private Label label3;
-        private Button button1;
-        private TextBox textBox1;
         private TextBox txtPassword;
         private TextBox txtUsername;
         private Button btnLogin;
