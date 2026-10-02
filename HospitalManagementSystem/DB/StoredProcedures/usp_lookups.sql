@@ -124,7 +124,99 @@ BEGIN
 END
 GO
 
+-- Procedures to check code uniqueness (for validation during edit)
+-- These check if a code exists in a table, excluding the current record by ID
+
+CREATE OR ALTER PROCEDURE dbo.usp_tblDiagnosisCodes_CheckCodeExists
+	@Code NVARCHAR(50),
+	@ExcludeId INT = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Count INT = 0;
+
+	IF @ExcludeId IS NULL
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDiagnosisCodes WHERE Code = @Code;
+	END
+	ELSE
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDiagnosisCodes 
+		WHERE Code = @Code AND DiagnosisCodeID <> @ExcludeId;
+	END
+
+	SELECT @Count AS CodeExists;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_tblDrugCategories_CheckCodeExists
+	@Code NVARCHAR(50),
+	@ExcludeId INT = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Count INT = 0;
+
+	IF @ExcludeId IS NULL
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDrugCategories WHERE Code = @Code;
+	END
+	ELSE
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDrugCategories 
+		WHERE Code = @Code AND DrugCategoryID <> @ExcludeId;
+	END
+
+	SELECT @Count AS CodeExists;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_tblRoomTypes_CheckCodeExists
+	@Code NVARCHAR(50),
+	@ExcludeId INT = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Count INT = 0;
+
+	IF @ExcludeId IS NULL
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblRoomTypes WHERE Code = @Code;
+	END
+	ELSE
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblRoomTypes 
+		WHERE Code = @Code AND RoomTypeID <> @ExcludeId;
+	END
+
+	SELECT @Count AS CodeExists;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_tblDepartmentTypes_CheckCodeExists
+	@Code NVARCHAR(50),
+	@ExcludeId INT = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Count INT = 0;
+
+	IF @ExcludeId IS NULL
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDepartmentTypes WHERE Code = @Code;
+	END
+	ELSE
+	BEGIN
+		SELECT @Count = COUNT(1) FROM dbo.tblDepartmentTypes 
+		WHERE Code = @Code AND DepartmentTypeID <> @ExcludeId;
+	END
+
+	SELECT @Count AS CodeExists;
+END
+GO
+
 -- UPDATE stored procedures for editing master data records
+-- Note: Code cannot be changed to prevent breaking relationships
 
 CREATE OR ALTER PROCEDURE dbo.usp_tblDiagnosisCodes_Update
 	@Id INT,
