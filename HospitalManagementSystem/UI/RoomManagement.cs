@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
@@ -25,6 +22,7 @@ namespace UI
             // wire buttons
             this.btnAdd.Click += BtnAdd_Click;
             this.btnEdit.Click += BtnEdit_Click;
+            this.btnDelete.Click += BtnDelete_Click;
 
             // initial load
             RefreshRoomList();
@@ -179,6 +177,7 @@ namespace UI
                 var sql = "INSERT INTO dbo.tblRooms (RoomNo, Type, Rate, Status) VALUES (@roomNo, @type, @rate, @status)";
                 var rows = CreateRoom(sql,
                     new SqlParameter("@roomNo", roomNo),
+
                     new SqlParameter("@type", type),
                     new SqlParameter("@rate", rate),
                     new SqlParameter("@status", status)
@@ -261,6 +260,53 @@ namespace UI
             catch (Exception ex)
             {
                 MessageBox.Show("Error updating room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnDelete_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (listRoomNo.SelectedItems.Count == 0)
+                {
+                    MessageBox.Show("Please select a room to delete.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var selectedIndex = listRoomNo.SelectedItems[0].Index;
+                var selected = listRoomNo.SelectedItems[0].Text;
+
+                var confirm = MessageBox.Show($"Are you sure you want to delete room '{selected}'?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (confirm != DialogResult.Yes) return;
+
+                if (_service == null)
+                {
+                    // fallback - write delete SQL to temp file for later reconciliation
+                    var sql = "DELETE FROM dbo.tblRooms WHERE RoomNo = @roomNo";
+                    SaveToTempFile(sql, new SqlParameter[] { new SqlParameter("@roomNo", selected) });
+                    MessageBox.Show("Delete recorded for later execution (no DB connection).", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // remove from lists visually
+                    if (listRoomNo.Items.Count > selectedIndex) listRoomNo.Items.RemoveAt(selectedIndex);
+                    if (listType.Items.Count > selectedIndex) listType.Items.RemoveAt(selectedIndex);
+                    if (listRate.Items.Count > selectedIndex) listRate.Items.RemoveAt(selectedIndex);
+                    if (listStatus.Items.Count > selectedIndex) listStatus.Items.RemoveAt(selectedIndex);
+                    return;
+                }
+
+                var rows = _service.DeleteRoom(selected);
+                if (rows > 0)
+                {
+                    MessageBox.Show("Room deleted.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    RefreshRoomList();
+                }
+                else
+                {
+                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error deleting room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
