@@ -143,6 +143,86 @@ BEGIN
 END
 GO
 
+-- DiagnosisCodes: UPDATE
+DROP TRIGGER IF EXISTS dbo.trg_tblDiagnosisCodes_Update;
+GO
+CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Update
+ON dbo.tblDiagnosisCodes
+AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'UPDATE', 'tblDiagnosisCodes',
+		   'DiagnosisCodeID=' + CAST(d.DiagnosisCodeID AS NVARCHAR(50)),
+		   'Description: ' + ISNULL(d.Description,'') + ' -> ' + ISNULL(i.Description,'') +
+		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+	FROM inserted i
+	INNER JOIN deleted d ON i.DiagnosisCodeID = d.DiagnosisCodeID;
+END
+GO
+
+-- DrugCategories: UPDATE
+DROP TRIGGER IF EXISTS dbo.trg_tblDrugCategories_Update;
+GO
+CREATE TRIGGER dbo.trg_tblDrugCategories_Update
+ON dbo.tblDrugCategories
+AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'UPDATE', 'tblDrugCategories',
+		   'DrugCategoryID=' + CAST(d.DrugCategoryID AS NVARCHAR(50)),
+		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
+		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+	FROM inserted i
+	INNER JOIN deleted d ON i.DrugCategoryID = d.DrugCategoryID;
+END
+GO
+
+-- RoomTypes: UPDATE
+DROP TRIGGER IF EXISTS dbo.trg_tblRoomTypes_Update;
+GO
+CREATE TRIGGER dbo.trg_tblRoomTypes_Update
+ON dbo.tblRoomTypes
+AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'UPDATE', 'tblRoomTypes',
+		   'RoomTypeID=' + CAST(d.RoomTypeID AS NVARCHAR(50)),
+		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
+		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+	FROM inserted i
+	INNER JOIN deleted d ON i.RoomTypeID = d.RoomTypeID;
+END
+GO
+
+-- DepartmentTypes: UPDATE
+DROP TRIGGER IF EXISTS dbo.trg_tblDepartmentTypes_Update;
+GO
+CREATE TRIGGER dbo.trg_tblDepartmentTypes_Update
+ON dbo.tblDepartmentTypes
+AFTER UPDATE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'UPDATE', 'tblDepartmentTypes',
+		   'DepartmentTypeID=' + CAST(d.DepartmentTypeID AS NVARCHAR(50)),
+		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
+		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+	FROM inserted i
+	INNER JOIN deleted d ON i.DepartmentTypeID = d.DepartmentTypeID;
+END
+GO
+
 -- Seed: insert example master data only if missing
 IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = 'A00')
 	INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status, Notes) VALUES ('A00', 'Cholera', 'Active', NULL);
