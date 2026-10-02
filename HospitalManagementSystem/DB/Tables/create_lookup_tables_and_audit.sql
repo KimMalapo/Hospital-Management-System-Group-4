@@ -14,7 +14,7 @@ BEGIN
 END
 GO
 
--- Lookup: Diagnosis Codes
+-- Lookup: Diagnosis Codes (adds IsDeleted for soft-delete and filtered unique index on Code for active rows)
 IF OBJECT_ID('dbo.tblDiagnosisCodes', 'U') IS NULL
 BEGIN
 	CREATE TABLE dbo.tblDiagnosisCodes
@@ -24,8 +24,11 @@ BEGIN
 		Description     NVARCHAR(400) NOT NULL,
 		Status          NVARCHAR(50)  NOT NULL,
 		Notes           NVARCHAR(400) NULL,
-		CONSTRAINT UQ_tblDiagnosisCodes_Code UNIQUE (Code)
+		IsDeleted       BIT            NOT NULL DEFAULT (0)
 	);
+	-- enforce Code uniqueness only for non-deleted (active) rows so soft-deleted codes can be retained
+	IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = 'UQ_tblDiagnosisCodes_Code_Active')
+		CREATE UNIQUE INDEX UQ_tblDiagnosisCodes_Code_Active ON dbo.tblDiagnosisCodes(Code) WHERE IsDeleted = 0;
 END
 GO
 
@@ -39,8 +42,10 @@ BEGIN
 		Name           NVARCHAR(200) NOT NULL,
 		Status         NVARCHAR(50)  NOT NULL,
 		Notes          NVARCHAR(400) NULL,
-		CONSTRAINT UQ_tblDrugCategories_Code UNIQUE (Code)
+		IsDeleted      BIT            NOT NULL DEFAULT (0)
 	);
+	IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = 'UQ_tblDrugCategories_Code_Active')
+		CREATE UNIQUE INDEX UQ_tblDrugCategories_Code_Active ON dbo.tblDrugCategories(Code) WHERE IsDeleted = 0;
 END
 GO
 
@@ -54,8 +59,10 @@ BEGIN
 		Name       NVARCHAR(200) NOT NULL,
 		Status     NVARCHAR(50)  NOT NULL,
 		Notes      NVARCHAR(400) NULL,
-		CONSTRAINT UQ_tblRoomTypes_Code UNIQUE (Code)
+		IsDeleted  BIT            NOT NULL DEFAULT (0)
 	);
+	IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = 'UQ_tblRoomTypes_Code_Active')
+		CREATE UNIQUE INDEX UQ_tblRoomTypes_Code_Active ON dbo.tblRoomTypes(Code) WHERE IsDeleted = 0;
 END
 GO
 
@@ -69,8 +76,10 @@ BEGIN
 		Name             NVARCHAR(200) NOT NULL,
 		Status           NVARCHAR(50)  NOT NULL,
 		Notes            NVARCHAR(400) NULL,
-		CONSTRAINT UQ_tblDepartmentTypes_Code UNIQUE (Code)
+		IsDeleted        BIT            NOT NULL DEFAULT (0)
 	);
+	IF NOT EXISTS (SELECT 1 FROM sys.indexes i WHERE i.name = 'UQ_tblDepartmentTypes_Code_Active')
+		CREATE UNIQUE INDEX UQ_tblDepartmentTypes_Code_Active ON dbo.tblDepartmentTypes(Code) WHERE IsDeleted = 0;
 END
 GO
 
@@ -87,7 +96,7 @@ BEGIN
 	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
 	SELECT SUSER_SNAME(), 'INSERT', 'tblDiagnosisCodes',
 		   'DiagnosisCodeID=' + CAST(i.DiagnosisCodeID AS NVARCHAR(50)),
-		   'Code=' + ISNULL(i.Code,'') + ';Description=' + ISNULL(i.Description,'') + ';Status=' + ISNULL(i.Status,'')
+		   'Code=' + ISNULL(i.Code,'') + ';Description=' + ISNULL(i.Description,'') + ';Status=' + ISNULL(i.Status,'') + ';IsDeleted=' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i;
 END
 GO
@@ -104,7 +113,7 @@ BEGIN
 	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
 	SELECT SUSER_SNAME(), 'INSERT', 'tblDrugCategories',
 		   'DrugCategoryID=' + CAST(i.DrugCategoryID AS NVARCHAR(50)),
-		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'')
+		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'') + ';IsDeleted=' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i;
 END
 GO
@@ -121,7 +130,7 @@ BEGIN
 	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
 	SELECT SUSER_SNAME(), 'INSERT', 'tblRoomTypes',
 		   'RoomTypeID=' + CAST(i.RoomTypeID AS NVARCHAR(50)),
-		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'')
+		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'') + ';IsDeleted=' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i;
 END
 GO
@@ -138,7 +147,7 @@ BEGIN
 	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
 	SELECT SUSER_SNAME(), 'INSERT', 'tblDepartmentTypes',
 		   'DepartmentTypeID=' + CAST(i.DepartmentTypeID AS NVARCHAR(50)),
-		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'')
+		   'Code=' + ISNULL(i.Code,'') + ';Name=' + ISNULL(i.Name,'') + ';Status=' + ISNULL(i.Status,'') + ';IsDeleted=' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i;
 END
 GO
@@ -157,7 +166,8 @@ BEGIN
 		   'DiagnosisCodeID=' + CAST(d.DiagnosisCodeID AS NVARCHAR(50)),
 		   'Description: ' + ISNULL(d.Description,'') + ' -> ' + ISNULL(i.Description,'') +
 		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
-		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'') +
+		   ';IsDeleted: ' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10)) + ' -> ' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i
 	INNER JOIN deleted d ON i.DiagnosisCodeID = d.DiagnosisCodeID;
 END
@@ -177,7 +187,8 @@ BEGIN
 		   'DrugCategoryID=' + CAST(d.DrugCategoryID AS NVARCHAR(50)),
 		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
 		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
-		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'') +
+		   ';IsDeleted: ' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10)) + ' -> ' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i
 	INNER JOIN deleted d ON i.DrugCategoryID = d.DrugCategoryID;
 END
@@ -197,7 +208,8 @@ BEGIN
 		   'RoomTypeID=' + CAST(d.RoomTypeID AS NVARCHAR(50)),
 		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
 		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
-		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'') +
+		   ';IsDeleted: ' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10)) + ' -> ' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i
 	INNER JOIN deleted d ON i.RoomTypeID = d.RoomTypeID;
 END
@@ -217,13 +229,98 @@ BEGIN
 		   'DepartmentTypeID=' + CAST(d.DepartmentTypeID AS NVARCHAR(50)),
 		   'Name: ' + ISNULL(d.Name,'') + ' -> ' + ISNULL(i.Name,'') +
 		   ';Status: ' + ISNULL(d.Status,'') + ' -> ' + ISNULL(i.Status,'') +
-		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'')
+		   ';Notes: ' + ISNULL(d.Notes,'') + ' -> ' + ISNULL(i.Notes,'') +
+		   ';IsDeleted: ' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10)) + ' -> ' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
 	FROM inserted i
 	INNER JOIN deleted d ON i.DepartmentTypeID = d.DepartmentTypeID;
 END
 GO
 
+-- Add DELETE triggers to capture hard deletes (backend should prefer soft-delete by updating IsDeleted)
+-- DiagnosisCodes: DELETE
+DROP TRIGGER IF EXISTS dbo.trg_tblDiagnosisCodes_Delete;
+GO
+CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Delete
+ON dbo.tblDiagnosisCodes
+AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'DELETE', 'tblDiagnosisCodes',
+		   'DiagnosisCodeID=' + CAST(d.DiagnosisCodeID AS NVARCHAR(50)),
+		   'Code=' + ISNULL(d.Code,'') + ';Description=' + ISNULL(d.Description,'') + ';Status=' + ISNULL(d.Status,'') + ';IsDeleted=' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10))
+	FROM deleted d;
+END
+GO
+
+-- DrugCategories: DELETE
+DROP TRIGGER IF EXISTS dbo.trg_tblDrugCategories_Delete;
+GO
+CREATE TRIGGER dbo.trg_tblDrugCategories_Delete
+ON dbo.tblDrugCategories
+AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'DELETE', 'tblDrugCategories',
+		   'DrugCategoryID=' + CAST(d.DrugCategoryID AS NVARCHAR(50)),
+		   'Code=' + ISNULL(d.Code,'') + ';Name=' + ISNULL(d.Name,'') + ';Status=' + ISNULL(d.Status,'') + ';IsDeleted=' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10))
+	FROM deleted d;
+END
+GO
+
+-- RoomTypes: DELETE
+DROP TRIGGER IF EXISTS dbo.trg_tblRoomTypes_Delete;
+GO
+CREATE TRIGGER dbo.trg_tblRoomTypes_Delete
+ON dbo.tblRoomTypes
+AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'DELETE', 'tblRoomTypes',
+		   'RoomTypeID=' + CAST(d.RoomTypeID AS NVARCHAR(50)),
+		   'Code=' + ISNULL(d.Code,'') + ';Name=' + ISNULL(d.Name,'') + ';Status=' + ISNULL(d.Status,'') + ';IsDeleted=' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10))
+	FROM deleted d;
+END
+GO
+
+-- DepartmentTypes: DELETE
+DROP TRIGGER IF EXISTS dbo.trg_tblDepartmentTypes_Delete;
+GO
+CREATE TRIGGER dbo.trg_tblDepartmentTypes_Delete
+ON dbo.tblDepartmentTypes
+AFTER DELETE
+AS
+BEGIN
+	SET NOCOUNT ON;
+	INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
+	SELECT SUSER_SNAME(), 'DELETE', 'tblDepartmentTypes',
+		   'DepartmentTypeID=' + CAST(d.DepartmentTypeID AS NVARCHAR(50)),
+		   'Code=' + ISNULL(d.Code,'') + ';Name=' + ISNULL(d.Name,'') + ';Status=' + ISNULL(d.Status,'') + ';IsDeleted=' + CAST(ISNULL(d.IsDeleted,0) AS NVARCHAR(10))
+	FROM deleted d;
+END
+GO
+
 -- Seed: insert example master data only if missing
+IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = 'A00')
+	INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status, Notes) VALUES ('A00', 'Cholera', 'Active', NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = 'ANTIB')
+	INSERT INTO dbo.tblDrugCategories (Code, Name, Status, Notes) VALUES ('ANTIB', 'Antibiotics', 'Active', NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = 'GEN')
+	INSERT INTO dbo.tblRoomTypes (Code, Name, Status, Notes) VALUES ('GEN', 'General Ward', 'Active', NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = 'EMR')
+	INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status, Notes) VALUES ('EMR', 'Emergency', 'Active', NULL);
+GO
+
+
+
 IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = 'A00')
 	INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status, Notes) VALUES ('A00', 'Cholera', 'Active', NULL);
 
