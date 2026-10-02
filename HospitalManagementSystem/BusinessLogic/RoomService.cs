@@ -12,14 +12,10 @@ namespace BusinessLogic
             _db = new DbExecutor(connectionString);
         }
 
-        public DataTable GetRooms(string sql = "SELECT * FROM dbo.tblRoomTypes")
-        {
-            return _db.Query(sql);
-        }
+        public DataTable GetRooms(string sql = "SELECT * FROM dbo.tblRoomTypes") => _db.Query(sql);
 
-        public int CreateRoom(string insertSql, params SqlParameter[] parameters)
-        {
-            return _db.Execute(insertSql, parameters);
-        }
+        public int CreateRoom(string insertSql, params SqlParameter[] parameters) => _db.Execute(insertSql, parameters);
+
+        public int DeleteRoom(string roomNo) => _db.Execute("DELETE FROM dbo.tblRooms WHERE RoomNo = @roomNo", new SqlParameter("@roomNo", roomNo));
     }
 }
