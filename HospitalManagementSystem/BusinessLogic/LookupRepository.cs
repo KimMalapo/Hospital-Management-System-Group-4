@@ -153,6 +153,42 @@ namespace BusinessLogic
             return 0;
         }
 
+        // Search for lookup items by keyword (Code or Name)
+        public List<LookupItem> Search(string spBaseName, string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(spBaseName))
+                throw new ArgumentException("spBaseName required", nameof(spBaseName));
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                throw new ArgumentException("searchTerm required", nameof(searchTerm));
+
+            var result = new List<LookupItem>();
+            var spName = $"usp_{spBaseName}_Search";
+
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandText = spName;
+            cmd.Parameters.Add(new SqlParameter("@SearchTerm", SqlDbType.NVarChar, 200) { Value = searchTerm });
+
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var item = new LookupItem
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    Code = SafeGetString(reader, "Code"),
+                    Name = SafeGetString(reader, "Name"),
+                    Status = SafeGetString(reader, "Status"),
+                    Notes = SafeGetString(reader, "Notes")
+                };
+
+                result.Add(item);
+            }
+
+            return result;
+        }
+
         private static string? SafeGetString(SqlDataReader reader, string name)
         {
             var idx = reader.GetOrdinal(name);
