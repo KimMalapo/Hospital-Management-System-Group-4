@@ -36,6 +36,11 @@
             this.lblAge = new System.Windows.Forms.Label();
             this.lblGender = new System.Windows.Forms.Label();
             this.lblContactNumber = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnClick = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // lblPatientID
@@ -118,11 +123,56 @@
             this.lblContactNumber.TabIndex = 18;
             this.lblContactNumber.Text = "Contact Number:";
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.BackColor = System.Drawing.Color.CornflowerBlue;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic))), System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.White;
+            this.label2.Location = new System.Drawing.Point(17, 359);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(420, 18);
+            this.label2.TabIndex = 19;
+            this.label2.Text = "BILLING                                                                      ";
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.btnClick);
+            this.groupBox1.Controls.Add(this.label3);
+            this.groupBox1.Location = new System.Drawing.Point(20, 403);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(384, 75);
+            this.groupBox1.TabIndex = 20;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Billing Information";
+            // 
+            // btnClick
+            // 
+            this.btnClick.Location = new System.Drawing.Point(92, 35);
+            this.btnClick.Name = "btnClick";
+            this.btnClick.Size = new System.Drawing.Size(123, 26);
+            this.btnClick.TabIndex = 17;
+            this.btnClick.Text = "CLICK";
+            this.btnClick.UseVisualStyleBackColor = true;
+            this.btnClick.Click += new System.EventHandler(this.btnClick_Click);
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(19, 40);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(56, 16);
+            this.label3.TabIndex = 16;
+            this.label3.Text = "Bill Out";
+            // 
             // frmPatientSearch
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(436, 338);
+            this.ClientSize = new System.Drawing.Size(436, 500);
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.lblContactNumber);
             this.Controls.Add(this.lblGender);
             this.Controls.Add(this.lblAge);
@@ -132,8 +182,10 @@
             this.Controls.Add(this.txtPatientID);
             this.Controls.Add(this.lblPatientID);
             this.Name = "frmPatientSearch";
-            this.Text = "Form1";
+            this.Text = "PatientSearch";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -149,6 +201,10 @@
         private System.Windows.Forms.Label lblAge;
         private System.Windows.Forms.Label lblGender;
         private System.Windows.Forms.Label lblContactNumber;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Button btnClick;
+        private System.Windows.Forms.Label label3;
     }
 }
 

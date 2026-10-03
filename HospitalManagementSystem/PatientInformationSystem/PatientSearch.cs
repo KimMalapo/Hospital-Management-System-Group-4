@@ -47,6 +47,20 @@ namespace PatientInformationSystem
             }
 
         }
+
+        private void btnClick_Click(object sender, EventArgs e)
+        {
+            PatientBilling billingForm = new PatientBilling();
+
+            billingForm.FormClosed += (s, args) =>
+            {
+                this.Show();
+            };
+
+            billingForm.Show();
+
+            this.Hide();
+        }
     }
 
 }
