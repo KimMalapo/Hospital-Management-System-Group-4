@@ -4,7 +4,6 @@ using Model;
 
 namespace BusinessLogic
 {
-    // Small service wrapping the repository. Keeps calling code simple.
     public class LookupService
     {
         private readonly LookupRepository _repo;
@@ -14,53 +13,54 @@ namespace BusinessLogic
             _repo = new LookupRepository(connectionString ?? throw new ArgumentNullException(nameof(connectionString)));
         }
 
-        // Public method expects a simple lookup key like "RoomTypes", "DrugCategories", "DiagnosisCodes", "DepartmentTypes"
-        // It maps to stored procs named like "usp_tblRoomTypes_Get" by prefixing with "tbl" when needed.
+        private string NormalizeTable(string key) => 
+            key.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? key : "tbl" + key;
+
         public List<LookupItem> GetAll(string lookupKey)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) throw new ArgumentException("lookupKey required", nameof(lookupKey));
-
-            // Normalize key to the table name used in stored procs
-            // Accept keys like "RoomTypes" or "tblRoomTypes"
-            var table = lookupKey.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? lookupKey : "tbl" + lookupKey;
-            return _repo.GetList(table);
+            if (string.IsNullOrWhiteSpace(lookupKey)) 
+                throw new ArgumentException("lookupKey required", nameof(lookupKey));
+            return _repo.GetList(NormalizeTable(lookupKey));
         }
 
         public LookupItem? GetById(string lookupKey, int id)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            var table = lookupKey.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? lookupKey : "tbl" + lookupKey;
-            return _repo.GetById(table, id);
+            if (string.IsNullOrWhiteSpace(lookupKey)) 
+                throw new ArgumentException("lookupKey required", nameof(lookupKey));
+            return _repo.GetById(NormalizeTable(lookupKey), id);
         }
 
-        // Update an existing lookup/master data item.
-        // Validation rules applied: required fields (Name/Status) and code-change protection.
-        // Returns number of rows affected.
         public int Update(string lookupKey, LookupItem item)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            if (item == null) throw new ArgumentNullException(nameof(item));
+            if (string.IsNullOrWhiteSpace(lookupKey)) 
+                throw new ArgumentException("lookupKey required", nameof(lookupKey));
+            if (item == null) 
+                throw new ArgumentNullException(nameof(item));
 
-            var table = lookupKey.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? lookupKey : "tbl" + lookupKey;
-
-            // Fetch existing record to validate existence and prevent changing Code
+            var table = NormalizeTable(lookupKey);
             var existing = _repo.GetById(table, item.Id);
-            if (existing == null) throw new ArgumentException($"No record with Id={item.Id} in {table}");
+            if (existing == null) 
+                throw new ArgumentException($"No record with Id={item.Id}");
 
-            // Code change is not allowed by DB update procedures; enforce here.
-            if (!string.IsNullOrWhiteSpace(item.Code) && !string.Equals(item.Code, existing.Code, StringComparison.Ordinal))
-                throw new InvalidOperationException("Changing the Code is not allowed. To change Code safely, create a new record and retire the old one.");
+            if (!string.IsNullOrWhiteSpace(item.Code) && item.Code != existing.Code)
+                throw new InvalidOperationException("Cannot change Code");
 
-            // Required fields: Name/Description and Status
             if (string.IsNullOrWhiteSpace(item.Name))
-                throw new ArgumentException("Name/Description is required", nameof(item.Name));
+                throw new ArgumentException("Name is required", nameof(item.Name));
             if (string.IsNullOrWhiteSpace(item.Status))
                 throw new ArgumentException("Status is required", nameof(item.Status));
 
-            // Optionally check uniqueness if caller attempted to change Code (we disallow), but keep check available
-            // Call repository update
-            var rows = _repo.Update(table, item);
-            return rows;
+            return _repo.Update(table, item);
+        }
+
+        public List<LookupItem> Search(string lookupKey, string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(lookupKey)) 
+                throw new ArgumentException("lookupKey required", nameof(lookupKey));
+            if (string.IsNullOrWhiteSpace(searchTerm)) 
+                throw new ArgumentException("searchTerm required", nameof(searchTerm));
+
+            return _repo.Search(NormalizeTable(lookupKey), searchTerm);
         }
     }
 }

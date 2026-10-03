@@ -34,6 +34,7 @@
             btnAdd = new Button();
             btnEdit = new Button();
             btnSearch = new Button();
+            txtSearch = new TextBox();
             listRoomNo = new ListView();
             listType = new ListView();
             listRate = new ListView();
@@ -41,6 +42,7 @@
             label2 = new Label();
             label3 = new Label();
             btnDelete = new Button();
+            labelSearch = new Label();
             SuspendLayout();
             // 
             // listStatus
@@ -102,6 +104,25 @@
             btnSearch.TabIndex = 12;
             btnSearch.Text = "SEARCH";
             btnSearch.UseVisualStyleBackColor = true;
+            // 
+            // txtSearch
+            // 
+            txtSearch.Font = new Font("Segoe UI", 12F);
+            txtSearch.Location = new Point(220, 70);
+            txtSearch.Name = "txtSearch";
+            txtSearch.Size = new Size(300, 34);
+            txtSearch.TabIndex = 20;
+            txtSearch.PlaceholderText = "Enter Code or Name to search...";
+            // 
+            // labelSearch
+            // 
+            labelSearch.AutoSize = true;
+            labelSearch.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            labelSearch.Location = new Point(12, 70);
+            labelSearch.Name = "labelSearch";
+            labelSearch.Size = new Size(73, 28);
+            labelSearch.TabIndex = 21;
+            labelSearch.Text = "Search:";
             // 
             // listRoomNo
             // 
@@ -172,6 +193,8 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(732, 556);
+            Controls.Add(labelSearch);
+            Controls.Add(txtSearch);
             Controls.Add(btnDelete);
             Controls.Add(label3);
             Controls.Add(label2);
@@ -198,7 +221,8 @@
         private Label label5;
         private Button btnAdd;
         private Button btnEdit;
-
+        private TextBox txtSearch;
+        private Label labelSearch;
         private Button btnSearch;
         private ListView listRoomNo;
         private ListView listType;

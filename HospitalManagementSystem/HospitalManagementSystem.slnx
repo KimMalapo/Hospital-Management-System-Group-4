@@ -1,6 +1,6 @@
 <Solution>
   <Project Path="BusinessLogic/BusinessLogic.csproj" />
-  <!-- DB project removed from solution build to avoid SSDT/targets dependency on CI/CLI environments -->
   <Project Path="Model/Model.csproj" />
+  <Project Path="PatientInformationSystem/UX.csproj" Id="f8ba42f3-341b-47f5-86ee-81747cb61d5c" />
   <Project Path="UI/UI.csproj" />
 </Solution>
