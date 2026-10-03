@@ -12,17 +12,23 @@ namespace UI
     public partial class RoomManagement : Form
     {
         private readonly RoomService? _service;
+        private readonly LookupService? _lookupService;
 
         public RoomManagement()
         {
             InitializeComponent();
             var cs = Config.GetConnectionString();
-            if (!string.IsNullOrWhiteSpace(cs)) _service = new RoomService(cs);
+            if (!string.IsNullOrWhiteSpace(cs))
+            {
+                _service = new RoomService(cs);
+                _lookupService = new LookupService(cs);
+            }
 
             // wire buttons
             this.btnAdd.Click += BtnAdd_Click;
             this.btnEdit.Click += BtnEdit_Click;
             this.btnDelete.Click += BtnDelete_Click;
+            this.btnSearch.Click += BtnSearch_Click;
 
             // initial load
             RefreshRoomList();
@@ -307,6 +313,54 @@ namespace UI
             catch (Exception ex)
             {
                 MessageBox.Show("Error deleting room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void BtnSearch_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var searchTerm = txtSearch.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    MessageBox.Show("Please enter a search term (Code or Name).", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (_lookupService == null)
+                {
+                    MessageBox.Show("Search is not available without a database connection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // Search in tblRoomTypes lookup table
+                var results = _lookupService.Search("RoomTypes", searchTerm);
+
+                if (results.Count == 0)
+                {
+                    MessageBox.Show("No matching records found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Display search results in the list views
+                listRoomNo.Items.Clear();
+                listType.Items.Clear();
+                listRate.Items.Clear();
+                listStatus.Items.Clear();
+
+                foreach (var item in results)
+                {
+                    listRoomNo.Items.Add(item.Code ?? string.Empty);
+                    listType.Items.Add(item.Name ?? string.Empty);
+                    listRate.Items.Add(item.Status ?? string.Empty);
+                    listStatus.Items.Add(item.Notes ?? string.Empty);
+                }
+
+                MessageBox.Show($"Found {results.Count} matching record(s).", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error during search: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
