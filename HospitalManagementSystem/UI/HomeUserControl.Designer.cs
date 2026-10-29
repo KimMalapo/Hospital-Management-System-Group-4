@@ -102,6 +102,7 @@
             btnMdata.TabIndex = 16;
             btnMdata.Text = "Open Master Data →";
             btnMdata.UseVisualStyleBackColor = true;
+            btnMdata.Click += btnMdata_Click;
             // 
             // label18
             // 
@@ -165,6 +166,7 @@
             btnRums.TabIndex = 16;
             btnRums.Text = "Open Rooms →";
             btnRums.UseVisualStyleBackColor = true;
+            btnRums.Click += btnRums_Click;
             // 
             // label15
             // 
@@ -239,6 +241,7 @@
             btnPatients1.TabIndex = 16;
             btnPatients1.Text = "Open Patients →";
             btnPatients1.UseVisualStyleBackColor = true;
+            btnPatients1.Click += btnPatients1_Click;
             // 
             // label13
             // 

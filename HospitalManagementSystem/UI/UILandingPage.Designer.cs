@@ -40,7 +40,6 @@
             pnlUCHandler = new Panel();
             label4 = new Label();
             btnHome = new Button();
-            lblPatients = new Button();
             btnRoom = new Button();
             btnMasterData = new Button();
             label5 = new Label();
@@ -56,7 +55,7 @@
             // 
             btnLogout.BackColor = Color.Red;
             btnLogout.Font = new Font("Yu Gothic Medium", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnLogout.Location = new Point(33, 993);
+            btnLogout.Location = new Point(33, 879);
             btnLogout.Name = "btnLogout";
             btnLogout.Size = new Size(352, 60);
             btnLogout.TabIndex = 0;
@@ -166,30 +165,21 @@
             btnHome.UseVisualStyleBackColor = true;
             btnHome.Click += btnHome_Click;
             // 
-            // lblPatients
-            // 
-            lblPatients.Font = new Font("Yu Gothic Medium", 16.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lblPatients.Location = new Point(33, 437);
-            lblPatients.Name = "lblPatients";
-            lblPatients.Size = new Size(352, 55);
-            lblPatients.TabIndex = 6;
-            lblPatients.Text = "Patients";
-            lblPatients.UseVisualStyleBackColor = true;
-            // 
             // btnRoom
             // 
             btnRoom.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnRoom.Location = new Point(33, 651);
+            btnRoom.Location = new Point(33, 537);
             btnRoom.Name = "btnRoom";
             btnRoom.Size = new Size(352, 55);
             btnRoom.TabIndex = 7;
             btnRoom.Text = "Room";
             btnRoom.UseVisualStyleBackColor = true;
+            btnRoom.Click += btnRoom_Click;
             // 
             // btnMasterData
             // 
             btnMasterData.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnMasterData.Location = new Point(33, 741);
+            btnMasterData.Location = new Point(33, 627);
             btnMasterData.Name = "btnMasterData";
             btnMasterData.Size = new Size(352, 55);
             btnMasterData.TabIndex = 8;
@@ -201,7 +191,7 @@
             // 
             label5.AutoSize = true;
             label5.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label5.Location = new Point(87, 842);
+            label5.Location = new Point(87, 728);
             label5.Name = "label5";
             label5.Size = new Size(248, 31);
             label5.TabIndex = 9;
@@ -212,7 +202,7 @@
             label6.AutoSize = true;
             label6.Font = new Font("Yu Gothic Medium", 15F, FontStyle.Bold);
             label6.ForeColor = Color.DimGray;
-            label6.Location = new Point(33, 927);
+            label6.Location = new Point(33, 813);
             label6.Name = "label6";
             label6.Size = new Size(108, 26);
             label6.TabIndex = 10;
@@ -221,11 +211,11 @@
             // btnPatientMaintenance
             // 
             btnPatientMaintenance.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnPatientMaintenance.Location = new Point(33, 543);
+            btnPatientMaintenance.Location = new Point(33, 429);
             btnPatientMaintenance.Name = "btnPatientMaintenance";
             btnPatientMaintenance.Size = new Size(352, 55);
             btnPatientMaintenance.TabIndex = 11;
-            btnPatientMaintenance.Text = "Patient Maintenance";
+            btnPatientMaintenance.Text = "Patients";
             btnPatientMaintenance.UseVisualStyleBackColor = true;
             btnPatientMaintenance.Click += btnPatientMaintenance_Click;
             // 
@@ -253,7 +243,6 @@
             Controls.Add(label5);
             Controls.Add(btnMasterData);
             Controls.Add(btnRoom);
-            Controls.Add(lblPatients);
             Controls.Add(btnHome);
             Controls.Add(label4);
             Controls.Add(pnlUCHandler);
@@ -283,7 +272,6 @@
         private Panel pnlUCHandler;
         private Label label4;
         private Button btnHome;
-        private Button lblPatients;
         private Button btnRoom;
         private Button btnMasterData;
         private Label label5;

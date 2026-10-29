@@ -60,5 +60,13 @@ namespace UI
             pnlUCHandler.Controls.Clear();
             pnlUCHandler.Controls.Add(userControl);
         }
+
+        private void btnRoom_Click(object sender, EventArgs e)
+        {
+            RoomManagementUserControl userControl = new RoomManagementUserControl();
+            userControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(userControl);
+        }
     }
 }
