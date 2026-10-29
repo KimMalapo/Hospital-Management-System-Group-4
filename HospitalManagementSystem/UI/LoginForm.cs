@@ -236,5 +236,11 @@ namespace UI
             cmd.Parameters.AddWithValue("@db", databaseName);
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
+
+        private void btnToggle_Click(object sender, EventArgs e)
+        {
+            txtPassword.UseSystemPasswordChar = !txtPassword.UseSystemPasswordChar;
+            txtPassword.PasswordChar = txtPassword.UseSystemPasswordChar ? '•' : '\0';
+        }
     }
 }
