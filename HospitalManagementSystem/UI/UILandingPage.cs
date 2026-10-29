@@ -19,5 +19,38 @@ namespace UI
         {
             this.Close();
         }
+
+        private void btnHome_Click(object sender, EventArgs e)
+        {
+            HomeUserControl homeUserControl = new HomeUserControl();
+            homeUserControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(homeUserControl);
+
+        }
+
+        private void UILandingPage_Load(object sender, EventArgs e)
+        {
+            HomeUserControl homeUserControl = new HomeUserControl();
+            homeUserControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(homeUserControl);
+        }
+
+        private void btnPatientMaintenance_Click(object sender, EventArgs e)
+        {
+            PatientMaintenanceUserControl userControl = new PatientMaintenanceUserControl();
+            userControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(userControl);
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            UnifiedSearchUserControl userControl = new UnifiedSearchUserControl();
+            userControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(userControl);
+        }
     }
 }
