@@ -195,6 +195,7 @@
             btnMasterData.TabIndex = 8;
             btnMasterData.Text = "Master Data";
             btnMasterData.UseVisualStyleBackColor = true;
+            btnMasterData.Click += btnMasterData_Click;
             // 
             // label5
             // 

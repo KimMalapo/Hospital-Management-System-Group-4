@@ -52,5 +52,13 @@ namespace UI
             pnlUCHandler.Controls.Clear();
             pnlUCHandler.Controls.Add(userControl);
         }
+
+        private void btnMasterData_Click(object sender, EventArgs e)
+        {
+            MasterDataUserControl userControl = new MasterDataUserControl();
+            userControl.Dock = DockStyle.Fill;
+            pnlUCHandler.Controls.Clear();
+            pnlUCHandler.Controls.Add(userControl);
+        }
     }
 }
