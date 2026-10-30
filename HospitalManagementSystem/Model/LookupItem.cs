@@ -2,7 +2,6 @@ using System;
 
 namespace Model
 {
-    // Simple DTO for lookup/master data items
     public class LookupItem
     {
         public int Id { get; set; }
@@ -10,6 +9,7 @@ namespace Model
         public string? Name { get; set; }
         public string? Status { get; set; }
         public string? Notes { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime? LastUpdated { get; set; }
     }
 }
