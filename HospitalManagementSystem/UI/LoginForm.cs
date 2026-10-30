@@ -1,3 +1,5 @@
+using BusinessLogic;
+
 using System;
 using System.Data;
 using System.Windows.Forms;
@@ -100,7 +102,8 @@ namespace UI
                     try
                     {
                         Application.UserAppDataRegistry.SetValue("AuthToken", token);
-                        AuthService.SetToken(token);
+                        var auth = new AuthService();
+                        auth.ValidateToken(token);   // or ValidateToken;
                     }
                     catch
                     {

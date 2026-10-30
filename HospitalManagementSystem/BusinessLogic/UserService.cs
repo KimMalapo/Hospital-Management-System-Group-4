@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using Microsoft.Data.SqlClient;
 
@@ -12,24 +13,51 @@ namespace BusinessLogic
             _db = new DbExecutor(connectionString);
         }
 
+        public (bool Success, string Role, string Message) Login(string email, string password)
+        {
+            var dt = _db.QuerySP("usp_tblUsers_GetByEmail",
+                new SqlParameter("@Email", email));
+
+            if (dt.Rows.Count == 0)
+                return (false, "", "Invalid email or password");
+
+            var row = dt.Rows[0];
+            var hash = row["Password"] as string;
+            var role = row["Role"] as string ?? "Staff";
+
+            if (!PasswordHelper.Verify(password, hash ?? ""))
+                return (false, "", "Invalid email or password");
+
+            return (true, role, "Login successful");
+        }
+
+        public int Register(string email, string password, string role = "Staff")
+        {
+            if (role != "Admin" && role != "Staff")
+                throw new ArgumentException("Role must be Admin or Staff");
+
+            var hash = PasswordHelper.Hash(password);
+
+            try
+            {
+                return _db.ExecuteSP("usp_tblUsers_Create",
+                    new SqlParameter("@Email", email),
+                    new SqlParameter("@Password", hash),
+                    new SqlParameter("@Role", role));
+            }
+            catch (SqlException ex) when (ex.Number == 2627)
+            {
+                throw new InvalidOperationException("Email already registered");
+            }
+        }
+
+        // Old name the UI is calling
         public int CreateUser(string email, string passwordHash)
         {
-            var sql = "INSERT INTO dbo.tblUsers (Email, Password) VALUES (@e, @p);";
-            var p1 = new SqlParameter("@e", System.Data.SqlDbType.NVarChar) { Value = (object)email ?? System.DBNull.Value };
-            var p2 = new SqlParameter("@p", System.Data.SqlDbType.NVarChar) { Value = (object)passwordHash ?? System.DBNull.Value };
-            return _db.Execute(sql, p1, p2);
-        }
-
-        public DataTable GetUserByEmail(string email)
-        {
-            var sql = "SELECT UserID, Email, Password FROM dbo.tblUsers WHERE Email = @e";
-            var p = new SqlParameter("@e", System.Data.SqlDbType.NVarChar) { Value = (object)email ?? System.DBNull.Value };
-            return _db.Query(sql, p);
-        }
-
-        public DataTable GetAllUsers()
-        {
-            return _db.Query("SELECT UserID, Email FROM dbo.tblUsers ORDER BY UserID");
+            return _db.Execute(
+                "INSERT INTO dbo.tblUsers (Email, Password, Role) VALUES (@e, @p, 'Staff')",
+                new SqlParameter("@e", email),
+                new SqlParameter("@p", passwordHash));
         }
     }
 }

@@ -7,60 +7,81 @@ namespace BusinessLogic
     public class LookupService
     {
         private readonly LookupRepository _repo;
+        private readonly DbExecutor _db;
 
         public LookupService(string connectionString)
         {
-            _repo = new LookupRepository(connectionString ?? throw new ArgumentNullException(nameof(connectionString)));
+            _repo = new LookupRepository(connectionString);
+            _db = new DbExecutor(connectionString);
         }
 
-        private string NormalizeTable(string key) => 
+        private string T(string key) =>
             key.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? key : "tbl" + key;
 
-        public List<LookupItem> GetAll(string lookupKey)
+        public List<LookupItem> GetAll(string key) => _repo.GetList(T(key));
+        public LookupItem? GetById(string key, int id) => _repo.GetById(T(key), id);
+        public List<LookupItem> Search(string key, string term) => _repo.Search(T(key), term);
+
+        public int Create(string key, LookupItem item)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) 
-                throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            return _repo.GetList(NormalizeTable(lookupKey));
+            if (string.IsNullOrWhiteSpace(item.Code))
+                throw new ArgumentException("Code is required");
+            if (string.IsNullOrWhiteSpace(item.Name))
+                throw new ArgumentException("Name is required");
+
+            if (_repo.CodeExists(T(key), item.Code!))
+                throw new InvalidOperationException($"Code '{item.Code}' already exists");
+
+            return _repo.Create(T(key), item);
         }
 
-        public LookupItem? GetById(string lookupKey, int id)
+        public int Update(string key, LookupItem item)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) 
-                throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            return _repo.GetById(NormalizeTable(lookupKey), id);
-        }
+            if (string.IsNullOrWhiteSpace(item.Name))
+                throw new ArgumentException("Name is required");
+            if (string.IsNullOrWhiteSpace(item.Status))
+                throw new ArgumentException("Status is required");
 
-        public int Update(string lookupKey, LookupItem item)
-        {
-            if (string.IsNullOrWhiteSpace(lookupKey)) 
-                throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            if (item == null) 
-                throw new ArgumentNullException(nameof(item));
-
-            var table = NormalizeTable(lookupKey);
-            var existing = _repo.GetById(table, item.Id);
-            if (existing == null) 
-                throw new ArgumentException($"No record with Id={item.Id}");
+            var existing = _repo.GetById(T(key), item.Id)
+                ?? throw new ArgumentException("Record not found");
 
             if (!string.IsNullOrWhiteSpace(item.Code) && item.Code != existing.Code)
-                throw new InvalidOperationException("Cannot change Code");
+                throw new InvalidOperationException("Code cannot be changed");
 
-            if (string.IsNullOrWhiteSpace(item.Name))
-                throw new ArgumentException("Name is required", nameof(item.Name));
-            if (string.IsNullOrWhiteSpace(item.Status))
-                throw new ArgumentException("Status is required", nameof(item.Status));
-
-            return _repo.Update(table, item);
+            return _repo.Update(T(key), item);
         }
 
-        public List<LookupItem> Search(string lookupKey, string searchTerm)
+        public int SoftDelete(string key, int id)
         {
-            if (string.IsNullOrWhiteSpace(lookupKey)) 
-                throw new ArgumentException("lookupKey required", nameof(lookupKey));
-            if (string.IsNullOrWhiteSpace(searchTerm)) 
-                throw new ArgumentException("searchTerm required", nameof(searchTerm));
+            var item = _repo.GetById(T(key), id)
+                ?? throw new ArgumentException("Record not found");
 
-            return _repo.Search(NormalizeTable(lookupKey), searchTerm);
+            if (IsCodeInUse(key, item.Code))
+            {
+                throw new InvalidOperationException(
+                    $"Cannot deactivate '{item.Code}' because it is still in use.");
+            }
+
+            return _repo.SoftDelete(T(key), id);
+        }
+
+        private bool IsCodeInUse(string lookupKey, string? code)
+        {
+            if (string.IsNullOrWhiteSpace(code)) return false;
+
+            try
+            {
+                if (lookupKey.Contains("RoomType", StringComparison.OrdinalIgnoreCase))
+                {
+                    var dt = _db.Query(
+                        "SELECT COUNT(*) FROM dbo.tblRooms WHERE RoomType = @code",
+                        new Microsoft.Data.SqlClient.SqlParameter("@code", code));
+                    return Convert.ToInt32(dt.Rows[0][0]) > 0;
+                }
+            }
+            catch { }
+
+            return false;
         }
     }
 }
