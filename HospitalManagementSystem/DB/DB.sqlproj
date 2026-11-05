@@ -67,6 +67,7 @@
     <Build Include="Table\dbo.tblRoomTypes.sql" />
     <Build Include="Table\dbo.tblDepartmentTypes.sql" />
     <Build Include="Table\dbo.tblUsers.sql" />
+    <Build Include="Table\dbo.tblPatients.sql" />
     <Build Include="Trigger\dbo.tblDiagnosisCodes_Triggers.sql" />
     <Build Include="Trigger\dbo.tblDrugCategories_Triggers.sql" />
     <Build Include="Trigger\dbo.tblRoomTypes_Triggers.sql" />
@@ -75,6 +76,7 @@
     <Build Include="StoredProcedure\usp_lookups.sql" />
     <Build Include="StoredProcedure\usp_lookups_write.sql" />
     <Build Include="StoredProcedure\usp_tblUsers.sql" />
+    <Build Include="StoredProcedure\usp_tblPatients.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Script.PostDeployment.sql" />
