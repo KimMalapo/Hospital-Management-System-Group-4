@@ -56,5 +56,27 @@
   <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
   <ItemGroup>
     <Folder Include="Properties" />
+    <Folder Include="Table" />
+    <Folder Include="Trigger" />
+    <Folder Include="StoredProcedure" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="Table\dbo.tblAuditLog.sql" />
+    <Build Include="Table\dbo.tblDiagnosisCodes.sql" />
+    <Build Include="Table\dbo.tblDrugCategories.sql" />
+    <Build Include="Table\dbo.tblRoomTypes.sql" />
+    <Build Include="Table\dbo.tblDepartmentTypes.sql" />
+    <Build Include="Table\dbo.tblUsers.sql" />
+    <Build Include="Trigger\dbo.tblDiagnosisCodes_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblDrugCategories_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblRoomTypes_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblDepartmentTypes_Triggers.sql" />
+    <Build Include="StoredProcedure\SearchStoredProcedures.sql" />
+    <Build Include="StoredProcedure\usp_lookups.sql" />
+    <Build Include="StoredProcedure\usp_lookups_write.sql" />
+    <Build Include="StoredProcedure\usp_tblUsers.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="Script.PostDeployment.sql" />
   </ItemGroup>
 </Project>
