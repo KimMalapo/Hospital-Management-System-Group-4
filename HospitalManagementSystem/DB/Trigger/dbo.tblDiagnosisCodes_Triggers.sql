@@ -9,7 +9,7 @@ BEGIN
     FROM inserted i;
 END
 GO
-
+ 
 CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Update ON dbo.tblDiagnosisCodes AFTER UPDATE AS
 BEGIN
     SET NOCOUNT ON;
