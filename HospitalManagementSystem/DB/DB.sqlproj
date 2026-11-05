@@ -74,6 +74,10 @@
     <Build Include="Trigger\dbo.tblDrugCategories_Triggers.sql" />
     <Build Include="Trigger\dbo.tblRoomTypes_Triggers.sql" />
     <Build Include="Trigger\dbo.tblDepartmentTypes_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblPatients_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblRooms_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblRoomAssignments_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblUsers_Triggers.sql" />
     <Build Include="StoredProcedure\SearchStoredProcedures.sql" />
     <Build Include="StoredProcedure\usp_lookups.sql" />
     <Build Include="StoredProcedure\usp_lookups_write.sql" />

@@ -9,3 +9,7 @@ CREATE TABLE dbo.tblAuditLog
     CreatedAt     DATETIME2      NOT NULL CONSTRAINT DF_tblAuditLog_CreatedAt DEFAULT SYSUTCDATETIME(),
     CONSTRAINT PK_tblAuditLog PRIMARY KEY CLUSTERED (AuditLogID)
 );
+GO
+
+CREATE NONCLUSTERED INDEX IX_tblAuditLog_Table_Created
+    ON dbo.tblAuditLog (TableName, CreatedAt DESC);
