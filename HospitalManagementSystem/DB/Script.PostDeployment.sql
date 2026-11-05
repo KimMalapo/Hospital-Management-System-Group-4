@@ -10,5 +10,11 @@ IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = 'ANTIB')
 IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = 'GEN')
     INSERT INTO dbo.tblRoomTypes (Code, Name, Status, Notes) VALUES ('GEN', 'General Ward', 'Active', NULL);
 
+IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = 'ICU')
+    INSERT INTO dbo.tblRoomTypes (Code, Name, Status, Notes) VALUES ('ICU', 'Intensive Care', 'Active', NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = 'PRV')
+    INSERT INTO dbo.tblRoomTypes (Code, Name, Status, Notes) VALUES ('PRV', 'Private Room', 'Active', NULL);
+
 IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = 'EMR')
     INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status, Notes) VALUES ('EMR', 'Emergency', 'Active', NULL);
