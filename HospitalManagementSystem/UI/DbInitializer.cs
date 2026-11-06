@@ -1,4 +1,5 @@
 using System;
+using BusinessLogic;
 using System.IO;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -60,10 +61,11 @@ CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(
                     MigratePlaintextPasswords(localConn);
                 }
 
-                try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "localdb_initialized.txt"), DateTime.UtcNow.ToString("o")); } catch { }
+                try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "localdb_initialized.txt"), DateTime.UtcNow.ToString("o")); } catch (Exception logEx) { Logger.Error("DbInitializer.EnsureDatabase failed", logEx); }
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("DbInitializer.EnsureDatabase failed", logEx);
                 // best-effort only
             }
         }
@@ -77,8 +79,9 @@ CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(
                 c.Close();
                 return true;
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("DbInitializer.TryOpen failed", logEx);
                 return false;
             }
         }
@@ -113,8 +116,9 @@ CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(
                     upd.ExecuteNonQuery();
                 }
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("DbInitializer.MigratePlaintextPasswords failed", logEx);
                 // ignore migration failures
             }
         }

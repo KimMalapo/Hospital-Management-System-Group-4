@@ -28,8 +28,9 @@ namespace UI
             {
                 return _service != null ? _service.GetRooms(sql) : new DataTable();
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("PatientRoomSearch.LoadPatientRooms failed", logEx);
                 return new DataTable();
             }
         }

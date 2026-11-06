@@ -53,6 +53,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("RegisterForm: Error creating user", ex);
                 MessageBox.Show("Error creating user: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

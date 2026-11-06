@@ -79,7 +79,7 @@ namespace BusinessLogic
                     return Convert.ToInt32(dt.Rows[0][0]) > 0;
                 }
             }
-            catch { }
+            catch (Exception logEx) { Logger.Error("LookupService.IsCodeInUse failed", logEx); }
 
             return false;
         }
