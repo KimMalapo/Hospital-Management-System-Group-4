@@ -41,8 +41,9 @@ namespace UI
             {
                 return _service != null ? _service.GetRooms(sql) : new DataTable();
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("RoomManagement.LoadRooms failed", logEx);
                 return new DataTable();
             }
         }
@@ -64,13 +65,15 @@ namespace UI
             catch (Exception ex)
             {
                 // On DB errors (connection, etc.) fall back to writing the pending operation to a temp file
+                Logger.Error("RoomManagement.CreateRoom: database error, saving to temp file", ex);
                 try
                 {
                     SaveToTempFile(insertSql, parameters);
                     return 1;
                 }
-                catch
+                catch (Exception logEx)
                 {
+                    Logger.Error("RoomManagement.CreateRoom failed", logEx);
                     // failed to persist to temp file as well
                     return 0;
                 }
@@ -96,8 +99,9 @@ namespace UI
                 File.AppendAllText(temp, sb.ToString());
                 return true;
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("RoomManagement.SaveToTempFile failed", logEx);
                 return false;
             }
         }
@@ -161,8 +165,9 @@ namespace UI
                     }
                 }
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("RoomManagement.RefreshRoomList failed", logEx);
                 // ignore refresh errors to avoid crashing UI
             }
         }
@@ -211,6 +216,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("RoomManagement: Error adding room", ex);
                 MessageBox.Show("Error adding room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -265,6 +271,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("RoomManagement: Error updating room", ex);
                 MessageBox.Show("Error updating room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -312,6 +319,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("RoomManagement: Error deleting room", ex);
                 MessageBox.Show("Error deleting room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -360,6 +368,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("RoomManagement: Error during search", ex);
                 MessageBox.Show("Error during search: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

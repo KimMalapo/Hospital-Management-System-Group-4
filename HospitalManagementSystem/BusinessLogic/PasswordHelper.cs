@@ -19,7 +19,7 @@ namespace BusinessLogic
             if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hash))
                 return false;
             try { return BCrypt.Net.BCrypt.Verify(password, hash); }
-            catch { return false; }
+            catch (Exception logEx) { Logger.Error("PasswordHelper.Verify failed", logEx); return false; }
         }
 
         // Old name the UI is calling

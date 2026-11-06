@@ -16,14 +16,6 @@ namespace UI
 {
     public partial class LoginForm : Form
     {
-        private static readonly string LocalDbConnectionString = new SqlConnectionStringBuilder
-        {
-            DataSource = "(localdb)\\MSSQLLocalDB",
-            IntegratedSecurity = true,
-            InitialCatalog = "HospitalDB",
-            TrustServerCertificate = true
-        }.ConnectionString;
-
         public LoginForm()
         {
             InitializeComponent();
@@ -67,9 +59,14 @@ namespace UI
                 return;
             }
 
-            var connStr = GetConnectionString();
-            if (string.IsNullOrEmpty(connStr))
+            string connStr;
+            try
             {
+                connStr = Config.GetConnectionString();
+            }
+            catch (InvalidOperationException cfgEx)
+            {
+                Logger.Error("LoginForm: connection string is not configured", cfgEx);
                 MessageBox.Show("Database connection string is not configured. Set environment variable 'HMS_CONNECTION_STRING' or provide UI/appsettings.json.", "Configuration", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -105,8 +102,9 @@ namespace UI
                         var auth = new AuthService();
                         auth.ValidateToken(token);   // or ValidateToken;
                     }
-                    catch
+                    catch (Exception logEx)
                     {
+                        Logger.Error("LoginForm: could not store/validate auth token", logEx);
                         // ignore registry write failures
                     }
 
@@ -121,123 +119,9 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("LoginForm: login failed while connecting to database", ex);
                 MessageBox.Show($"Error connecting to database: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private static string? GetConnectionString()
-        {
-            // 1) environment variable takes precedence
-            var env = Environment.GetEnvironmentVariable("HMS_CONNECTION_STRING");
-            if (!string.IsNullOrEmpty(env))
-            {
-                return ApplyTrustServerCertificate(env);
-            }
-
-            // 2) appsettings.json in UI project directory
-            var cs = LoadConnectionStringFromConfig();
-            if (!string.IsNullOrEmpty(cs))
-            {
-                return ValidateAndReturnConnectionString(cs);
-            }
-
-            return null;
-        }
-
-        private static string ApplyTrustServerCertificate(string connectionString)
-        {
-            try
-            {
-                var b = new SqlConnectionStringBuilder(connectionString)
-                {
-                    TrustServerCertificate = true
-                };
-                return b.ConnectionString;
-            }
-            catch
-            {
-                return connectionString;
-            }
-        }
-
-        private static string? LoadConnectionStringFromConfig()
-        {
-            try
-            {
-                var basePath = AppContext.BaseDirectory;
-                var configBuilder = new ConfigurationBuilder()
-                    .SetBasePath(basePath)
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-                    .AddEnvironmentVariables();
-                var config = configBuilder.Build();
-                return config.GetConnectionString("DefaultConnection");
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static string ValidateAndReturnConnectionString(string connectionString)
-        {
-            try
-            {
-                var builder = new SqlConnectionStringBuilder(connectionString)
-                {
-                    TrustServerCertificate = true
-                };
-
-                if (CanConnectToServer(builder))
-                {
-                    return builder.ConnectionString;
-                }
-            }
-            catch
-            {
-                // fall through to LocalDB
-            }
-
-            return LocalDbConnectionString;
-        }
-
-        private static bool CanConnectToServer(SqlConnectionStringBuilder builder)
-        {
-            // Test server-level connectivity using master DB
-            var masterBuilder = new SqlConnectionStringBuilder(builder.ConnectionString)
-            {
-                InitialCatalog = "master",
-                TrustServerCertificate = true
-            };
-
-            try
-            {
-                using var masterConn = new SqlConnection(masterBuilder.ConnectionString);
-                masterConn.Open();
-
-                var targetDb = string.IsNullOrEmpty(builder.InitialCatalog) ? "master" : builder.InitialCatalog;
-                if (!DatabaseExists(masterConn, targetDb))
-                {
-                    return false;
-                }
-
-                // Try opening the target DB to ensure this login can access it
-                using var testConn = new SqlConnection(builder.ConnectionString);
-                testConn.Open();
-                testConn.Close();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private static bool DatabaseExists(SqlConnection masterConn, string databaseName)
-        {
-            using var cmd = masterConn.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(1) FROM sys.databases WHERE name = @db";
-            cmd.Parameters.AddWithValue("@db", databaseName);
-            return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
         }
 
         private void btnToggle_Click(object sender, EventArgs e)

@@ -28,8 +28,9 @@ namespace UI
             {
                 return _service != null ? _service.GetPatients(sql) : new DataTable();
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("PatientInformationSearch.SearchPatients failed", logEx);
                 return new DataTable();
             }
         }

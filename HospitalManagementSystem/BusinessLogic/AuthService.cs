@@ -52,8 +52,9 @@ namespace BusinessLogic
                     ClockSkew = TimeSpan.Zero
                 }, out _);
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error("AuthService.ValidateToken: token rejected", ex);
                 return null;
             }
         }

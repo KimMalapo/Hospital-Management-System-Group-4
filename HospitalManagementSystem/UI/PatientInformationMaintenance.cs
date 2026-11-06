@@ -32,7 +32,7 @@ namespace UI
                 cbGender.Items.AddRange(new object[] { "Male", "Female", "Other" });
                 if (cbGender.Items.Count > 0) cbGender.SelectedIndex = 0;
             }
-            catch { }
+            catch (Exception logEx) { Logger.Error("PatientInformationMaintenance: could not populate gender list", logEx); }
         }
 
         // Simple read for patient list. Call with SQL like "SELECT * FROM dbo.tblPatients"
@@ -42,8 +42,9 @@ namespace UI
             {
                 return _service != null ? _service.GetPatients(sql) : new DataTable();
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("PatientInformationMaintenance.LoadPatients failed", logEx);
                 return new DataTable();
             }
         }
@@ -55,8 +56,9 @@ namespace UI
             {
                 return _service != null ? _service.CreatePatient(insertSql, parameters) : 0;
             }
-            catch
+            catch (Exception logEx)
             {
+                Logger.Error("PatientInformationMaintenance.CreatePatient failed", logEx);
                 return 0;
             }
         }
@@ -104,6 +106,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("PatientInformationMaintenance: Error adding patient", ex);
                 MessageBox.Show("Error adding patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -152,6 +155,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("PatientInformationMaintenance: Error updating patient", ex);
                 MessageBox.Show("Error updating patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -186,6 +190,7 @@ namespace UI
             }
             catch (Exception ex)
             {
+                Logger.Error("PatientInformationMaintenance: Error deleting patient", ex);
                 MessageBox.Show("Error deleting patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
