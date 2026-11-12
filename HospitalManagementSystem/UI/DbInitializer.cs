@@ -27,7 +27,7 @@ namespace UI
                 }
 
                 // fallback: create localdb HospitalDB and ensure tblUsers exists
-                var masterConn = "Server=(localdb)\\MSSQLLocalDB;Integrated Security=true;Initial Catalog=master;";
+                var masterConn = "Server=./SQLEXPRESS;Integrated Security=true;Initial Catalog=master;";
                 using (var m = new SqlConnection(masterConn))
                 {
                     m.Open();
@@ -36,7 +36,7 @@ namespace UI
                     c.ExecuteNonQuery();
                 }
 
-                var localConn = "Server=(localdb)\\MSSQLLocalDB;Integrated Security=true;Initial Catalog=HospitalDB;";
+                var localConn = "Server=./SQLEXPRESS;Integrated Security=true;Initial Catalog=HospitalDB;";
                 using (var conn = new SqlConnection(localConn))
                 {
                     conn.Open();
