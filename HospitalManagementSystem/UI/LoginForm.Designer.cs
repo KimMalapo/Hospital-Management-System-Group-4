@@ -3,12 +3,12 @@
     partial class LoginForm
     {
         /// <summary>
-        ///  Required designer variable.
+        /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
         /// <summary>
-        ///  Clean up any resources being used.
+        /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
@@ -23,133 +23,167 @@
         #region Windows Form Designer generated code
 
         /// <summary>
-        ///  Required method for Designer support - do not modify
-        ///  the contents of this method with the code editor.
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
-            label2 = new Label();
-            label3 = new Label();
-            txtPassword = new TextBox();
+            lblTitle = new Label();
+            lblUsername = new Label();
+            lblPassword = new Label();
             txtUsername = new TextBox();
+            txtPassword = new TextBox();
             btnLogin = new Button();
             btnToggle = new Button();
             linkRegister = new LinkLabel();
+            panelCard = new Panel();
+            panelCard.SuspendLayout();
             SuspendLayout();
             // 
-            // label1
+            // lblTitle
             // 
-            label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI", 20F);
-            label1.Location = new Point(152, 59);
-            label1.Name = "label1";
-            label1.Size = new Size(206, 37);
-            label1.TabIndex = 0;
-            label1.Text = "Hospital System";
+            lblTitle.AutoSize = true;
+            lblTitle.Font = new Font("Segoe UI Semibold", 18F, FontStyle.Bold);
+            lblTitle.ForeColor = Color.FromArgb(40, 40, 40);
+            lblTitle.Location = new Point(135, 30);
+            lblTitle.Name = "lblTitle";
+            lblTitle.Size = new Size(188, 32);
+            lblTitle.TabIndex = 0;
+            lblTitle.Text = "Hospital System";
             // 
-            // label2
+            // lblUsername
             // 
-            label2.AutoSize = true;
-            label2.Font = new Font("Segoe UI Semibold", 14.25F, FontStyle.Bold);
-            label2.Location = new Point(45, 150);
-            label2.Name = "label2";
-            label2.Size = new Size(103, 25);
-            label2.TabIndex = 1;
-            label2.Text = "Username:";
+            lblUsername.AutoSize = true;
+            lblUsername.Font = new Font("Segoe UI", 10.5F);
+            lblUsername.ForeColor = Color.FromArgb(80, 80, 80);
+            lblUsername.Location = new Point(50, 95);
+            lblUsername.Name = "lblUsername";
+            lblUsername.Size = new Size(71, 19);
+            lblUsername.TabIndex = 1;
+            lblUsername.Text = "Username";
             // 
-            // label3
+            // lblPassword
             // 
-            label3.AutoSize = true;
-            label3.Font = new Font("Segoe UI Semibold", 14.25F, FontStyle.Bold);
-            label3.Location = new Point(45, 203);
-            label3.Name = "label3";
-            label3.Size = new Size(96, 25);
-            label3.TabIndex = 2;
-            label3.Text = "Password:";
-            // 
-            // txtPassword
-            // 
-            txtPassword.Font = new Font("Segoe UI", 12F);
-            txtPassword.Location = new Point(152, 202);
-            txtPassword.Margin = new Padding(3, 2, 3, 2);
-            txtPassword.Name = "txtPassword";
-            txtPassword.Size = new Size(237, 29);
-            txtPassword.TabIndex = 5;
-            txtPassword.UseSystemPasswordChar = true;
+            lblPassword.AutoSize = true;
+            lblPassword.Font = new Font("Segoe UI", 10.5F);
+            lblPassword.ForeColor = Color.FromArgb(80, 80, 80);
+            lblPassword.Location = new Point(50, 165);
+            lblPassword.Name = "lblPassword";
+            lblPassword.Size = new Size(67, 19);
+            lblPassword.TabIndex = 2;
+            lblPassword.Text = "Password";
             // 
             // txtUsername
             // 
-            txtUsername.Font = new Font("Segoe UI", 12F);
-            txtUsername.Location = new Point(152, 149);
+            txtUsername.Font = new Font("Segoe UI", 11.5F);
+            txtUsername.Location = new Point(50, 119);
             txtUsername.Margin = new Padding(3, 2, 3, 2);
             txtUsername.Name = "txtUsername";
-            txtUsername.Size = new Size(237, 29);
-            txtUsername.TabIndex = 6;
+            txtUsername.Size = new Size(292, 28);
+            txtUsername.TabIndex = 3;
+            // 
+            // txtPassword
+            // 
+            txtPassword.Font = new Font("Segoe UI", 11.5F);
+            txtPassword.Location = new Point(50, 189);
+            txtPassword.Margin = new Padding(3, 2, 3, 2);
+            txtPassword.Name = "txtPassword";
+            txtPassword.Size = new Size(253, 28);
+            txtPassword.TabIndex = 4;
+            txtPassword.UseSystemPasswordChar = true;
             // 
             // btnLogin
             // 
-            btnLogin.Location = new Point(195, 257);
+            btnLogin.BackColor = Color.FromArgb(52, 110, 245);
+            btnLogin.Cursor = Cursors.Hand;
+            btnLogin.FlatAppearance.BorderSize = 0;
+            btnLogin.FlatStyle = FlatStyle.Flat;
+            btnLogin.Font = new Font("Segoe UI Semibold", 11.5F, FontStyle.Bold);
+            btnLogin.ForeColor = Color.White;
+            btnLogin.Location = new Point(50, 246);
             btnLogin.Margin = new Padding(3, 2, 3, 2);
             btnLogin.Name = "btnLogin";
-            btnLogin.Size = new Size(140, 35);
-            btnLogin.TabIndex = 7;
-            btnLogin.Text = "LOGIN";
-            btnLogin.UseVisualStyleBackColor = true;
+            btnLogin.Size = new Size(292, 38);
+            btnLogin.TabIndex = 6;
+            btnLogin.Text = "Sign In";
+            btnLogin.UseVisualStyleBackColor = false;
             btnLogin.Click += btnLogin_Click;
             // 
             // btnToggle
             // 
+            btnToggle.BackColor = Color.FromArgb(240, 240, 240);
             btnToggle.Cursor = Cursors.Hand;
-            btnToggle.Location = new Point(405, 202);
-            btnToggle.Margin = new Padding(3, 2, 3, 2);
+            btnToggle.FlatAppearance.BorderSize = 0;
+            btnToggle.FlatStyle = FlatStyle.Flat;
+            btnToggle.Font = new Font("Segoe UI", 10F);
+            btnToggle.Location = new Point(306, 189);
+            btnToggle.Margin = new Padding(0);
             btnToggle.Name = "btnToggle";
-            btnToggle.Size = new Size(34, 29);
-            btnToggle.TabIndex = 8;
+            btnToggle.Size = new Size(36, 28);
+            btnToggle.TabIndex = 5;
             btnToggle.Text = "👁";
+            btnToggle.UseVisualStyleBackColor = false;
             btnToggle.Click += btnToggle_Click;
             // 
             // linkRegister
             // 
+            linkRegister.ActiveLinkColor = Color.FromArgb(30, 80, 200);
             linkRegister.AutoSize = true;
-            linkRegister.Location = new Point(290, 305);
+            linkRegister.Font = new Font("Segoe UI", 9.5F);
+            linkRegister.LinkColor = Color.FromArgb(52, 110, 245);
+            linkRegister.Location = new Point(148, 302);
             linkRegister.Name = "linkRegister";
-            linkRegister.Size = new Size(100, 23);
-            linkRegister.TabIndex = 0;
+            linkRegister.Size = new Size(95, 17);
+            linkRegister.TabIndex = 7;
             linkRegister.TabStop = true;
-            linkRegister.Text = "Register";
+            linkRegister.Text = "Create account";
+            linkRegister.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // panelCard
+            // 
+            panelCard.BackColor = Color.White;
+            panelCard.Controls.Add(lblTitle);
+            panelCard.Controls.Add(linkRegister);
+            panelCard.Controls.Add(lblUsername);
+            panelCard.Controls.Add(btnLogin);
+            panelCard.Controls.Add(lblPassword);
+            panelCard.Controls.Add(btnToggle);
+            panelCard.Controls.Add(txtUsername);
+            panelCard.Controls.Add(txtPassword);
+            panelCard.Location = new Point(35, 30);
+            panelCard.Name = "panelCard";
+            panelCard.Size = new Size(392, 355);
+            panelCard.TabIndex = 8;
             // 
             // LoginForm
             // 
+            AcceptButton = btnLogin;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.RosyBrown;
-            ClientSize = new Size(502, 407);
-            Controls.Add(btnLogin);
-            Controls.Add(txtUsername);
-            Controls.Add(txtPassword);
-            Controls.Add(btnToggle);
-            Controls.Add(label3);
-            Controls.Add(label2);
-            Controls.Add(label1);
+            BackColor = Color.FromArgb(245, 247, 250);
+            ClientSize = new Size(462, 415);
+            Controls.Add(panelCard);
             FormBorderStyle = FormBorderStyle.None;
             Margin = new Padding(3, 2, 3, 2);
+            MaximizeBox = false;
             Name = "LoginForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Form1";
+            Text = "Hospital System - Login";
+            panelCard.ResumeLayout(false);
+            panelCard.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
 
-        private Label label1;
-        private Label label2;
-        private Label label3;
-        private TextBox txtPassword;
+        private Label lblTitle;
+        private Label lblUsername;
+        private Label lblPassword;
         private TextBox txtUsername;
+        private TextBox txtPassword;
         private Button btnLogin;
         private Button btnToggle;
         private LinkLabel linkRegister;
+        private Panel panelCard;
     }
 }
