@@ -20,7 +20,7 @@ namespace UI
             var cs = Config.GetConnectionString();
             if (!string.IsNullOrWhiteSpace(cs)) _service = new PatientService(cs);
 
-            // Wire up button handlers so the form is functional
+            // Wire up button handlers
             this.btnAdd.Click += BtnAdd_Click;
             this.btnUpdate.Click += BtnUpdate_Click;
             this.btnDelete.Click += BtnDelete_Click;
@@ -35,7 +35,6 @@ namespace UI
             catch (Exception logEx) { Logger.Error("PatientInformationMaintenance: could not populate gender list", logEx); }
         }
 
-        // Simple read for patient list. Call with SQL like "SELECT * FROM dbo.tblPatients"
         public DataTable LoadPatients(string sql = "SELECT * FROM dbo.tblPatients")
         {
             try
@@ -49,7 +48,6 @@ namespace UI
             }
         }
 
-        // Simple create for patient. Provide parameterized SQL and SqlParameters.
         public int CreatePatient(string insertSql, params SqlParameter[] parameters)
         {
             try
@@ -63,24 +61,62 @@ namespace UI
             }
         }
 
+        /// <summary>
+        /// Validates that textboxes and inputs are filled. Returns a message containing all missing fields.
+        /// </summary>
+        private bool ValidateFields(out string errorMessage, bool requirePatientId = true)
+        {
+            var missingFields = new List<string>();
+
+            if (requirePatientId && string.IsNullOrWhiteSpace(txtPatientID.Text))
+                missingFields.Add("• Patient ID");
+
+            if (string.IsNullOrWhiteSpace(txtName.Text))
+                missingFields.Add("• Name");
+
+            if (string.IsNullOrWhiteSpace(txtAge.Text))
+                missingFields.Add("• Age");
+
+            if (cbGender.SelectedItem == null || string.IsNullOrWhiteSpace(cbGender.SelectedItem.ToString()))
+                missingFields.Add("• Gender");
+
+            if (string.IsNullOrWhiteSpace(txtAddress.Text))
+                missingFields.Add("• Address");
+
+            if (string.IsNullOrWhiteSpace(txtContactNo.Text))
+                missingFields.Add("• Contact No.");
+
+            if (missingFields.Count > 0)
+            {
+                errorMessage = "The following required fields are empty:\n\n" + string.Join("\n", missingFields);
+                return false;
+            }
+
+            errorMessage = string.Empty;
+            return true;
+        }
+
         private void BtnAdd_Click(object? sender, EventArgs e)
         {
-            var id = txtPatientID.Text.Trim();
-            var name = txtName.Text.Trim();
-            if (!int.TryParse(txtAge.Text.Trim(), out var age))
+            // Run detailed field validation
+            if (!ValidateFields(out string validationError, requirePatientId: false))
             {
-                MessageBox.Show("Please enter a valid age.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(validationError, "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
+            var id = txtPatientID.Text.Trim();
+            var name = txtName.Text.Trim();
+
+            if (!int.TryParse(txtAge.Text.Trim(), out var age))
+            {
+                MessageBox.Show("Please enter a valid numeric value for Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             var gender = cbGender.SelectedItem?.ToString() ?? string.Empty;
             var address = txtAddress.Text.Trim();
             var contact = txtContactNo.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                MessageBox.Show("Name is required.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
 
             try
             {
@@ -96,7 +132,7 @@ namespace UI
 
                 if (rows > 0)
                 {
-                    MessageBox.Show("Patient added.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Patient added successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ClearFields();
                 }
                 else
@@ -113,16 +149,23 @@ namespace UI
 
         private void BtnUpdate_Click(object? sender, EventArgs e)
         {
-            var id = txtPatientID.Text.Trim();
-            if (string.IsNullOrWhiteSpace(id))
+            // For update, Patient ID is strictly required along with other fields
+            if (string.IsNullOrWhiteSpace(txtPatientID.Text))
             {
-                MessageBox.Show("Patient ID is required for update.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Patient ID is required to update a record.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            if (!ValidateFields(out string validationError, requirePatientId: true))
+            {
+                MessageBox.Show(validationError, "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var id = txtPatientID.Text.Trim();
             if (!int.TryParse(txtAge.Text.Trim(), out var age))
             {
-                MessageBox.Show("Please enter a valid age.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter a valid numeric value for Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -145,7 +188,7 @@ namespace UI
 
                 if (rows > 0)
                 {
-                    MessageBox.Show("Patient updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Patient updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ClearFields();
                 }
                 else
@@ -165,11 +208,11 @@ namespace UI
             var id = txtPatientID.Text.Trim();
             if (string.IsNullOrWhiteSpace(id))
             {
-                MessageBox.Show("Patient ID is required for delete.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Patient ID is required for deletion.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (MessageBox.Show("Are you sure you want to delete this patient?","Confirm",MessageBoxButtons.YesNo,MessageBoxIcon.Question) != DialogResult.Yes)
+            if (MessageBox.Show("Are you sure you want to delete this patient?", "Confirm Deletion", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             {
                 return;
             }
@@ -180,7 +223,7 @@ namespace UI
                 var rows = CreatePatient(sql, new SqlParameter("@id", id));
                 if (rows > 0)
                 {
-                    MessageBox.Show("Patient deleted.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Patient deleted successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ClearFields();
                 }
                 else
