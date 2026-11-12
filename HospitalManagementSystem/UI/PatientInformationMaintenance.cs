@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
 using BusinessLogic;
+using Model;
 
 namespace UI
 {
@@ -17,8 +14,19 @@ namespace UI
         public PatientInformationMaintenance()
         {
             InitializeComponent();
-            var cs = Config.GetConnectionString();
-            if (!string.IsNullOrWhiteSpace(cs)) _service = new PatientService(cs);
+
+            try
+            {
+                var cs = Config.GetConnectionString();
+                if (!string.IsNullOrWhiteSpace(cs))
+                {
+                    _service = new PatientService(cs);
+                }
+            }
+            catch (Exception ex)
+            {
+                UIHelper.HandleDatabaseError(ex, "initializing patient service");
+            }
 
             // Wire up button handlers
             this.btnAdd.Click += BtnAdd_Click;
@@ -35,78 +43,23 @@ namespace UI
             catch (Exception logEx) { Logger.Error("PatientInformationMaintenance: could not populate gender list", logEx); }
         }
 
-        public DataTable LoadPatients(string sql = "SELECT * FROM dbo.tblPatients")
-        {
-            try
-            {
-                return _service != null ? _service.GetPatients(sql) : new DataTable();
-            }
-            catch (Exception logEx)
-            {
-                Logger.Error("PatientInformationMaintenance.LoadPatients failed", logEx);
-                return new DataTable();
-            }
-        }
-
-        public int CreatePatient(string insertSql, params SqlParameter[] parameters)
-        {
-            try
-            {
-                return _service != null ? _service.CreatePatient(insertSql, parameters) : 0;
-            }
-            catch (Exception logEx)
-            {
-                Logger.Error("PatientInformationMaintenance.CreatePatient failed", logEx);
-                return 0;
-            }
-        }
-
-        /// <summary>
-        /// Validates that textboxes and inputs are filled. Returns a message containing all missing fields.
-        /// </summary>
-        private bool ValidateFields(out string errorMessage, bool requirePatientId = true)
-        {
-            var missingFields = new List<string>();
-
-            if (requirePatientId && string.IsNullOrWhiteSpace(txtPatientID.Text))
-                missingFields.Add("• Patient ID");
-
-            if (string.IsNullOrWhiteSpace(txtName.Text))
-                missingFields.Add("• Name");
-
-            if (string.IsNullOrWhiteSpace(txtAge.Text))
-                missingFields.Add("• Age");
-
-            if (cbGender.SelectedItem == null || string.IsNullOrWhiteSpace(cbGender.SelectedItem.ToString()))
-                missingFields.Add("• Gender");
-
-            if (string.IsNullOrWhiteSpace(txtAddress.Text))
-                missingFields.Add("• Address");
-
-            if (string.IsNullOrWhiteSpace(txtContactNo.Text))
-                missingFields.Add("• Contact No.");
-
-            if (missingFields.Count > 0)
-            {
-                errorMessage = "The following required fields are empty:\n\n" + string.Join("\n", missingFields);
-                return false;
-            }
-
-            errorMessage = string.Empty;
-            return true;
-        }
-
         private void BtnAdd_Click(object? sender, EventArgs e)
         {
-            // Run detailed field validation
-            if (!ValidateFields(out string validationError, requirePatientId: false))
+            // 1. Use UIHelper to validate empty fields
+            var fieldsToCheck = new Dictionary<string, string>
+            {
+                { "Name", txtName.Text.Trim() },
+                { "Age", txtAge.Text.Trim() },
+                { "Gender", cbGender.SelectedItem?.ToString() ?? string.Empty },
+                { "Address", txtAddress.Text.Trim() },
+                { "Contact No.", txtContactNo.Text.Trim() }
+            };
+
+            if (!UIHelper.ValidateFields(fieldsToCheck, out string validationError))
             {
                 MessageBox.Show(validationError, "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            var id = txtPatientID.Text.Trim();
-            var name = txtName.Text.Trim();
 
             if (!int.TryParse(txtAge.Text.Trim(), out var age))
             {
@@ -114,78 +67,93 @@ namespace UI
                 return;
             }
 
-            var gender = cbGender.SelectedItem?.ToString() ?? string.Empty;
-            var address = txtAddress.Text.Trim();
-            var contact = txtContactNo.Text.Trim();
+            if (_service == null)
+            {
+                MessageBox.Show("Database service is not initialized.", "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
+            // 2. Map form inputs to the Patient model
+            var patient = new Patient
+            {
+                FirstName = txtName.Text.Trim(),
+                LastName = "", // If you have a separate Last Name textbox, map it here
+                Gender = cbGender.SelectedItem?.ToString(),
+                Address = txtAddress.Text.Trim(),
+                ContactNumber = txtContactNo.Text.Trim(),
+                DateOfBirth = DateTime.Today.AddYears(-age) // Optional DOB estimate based on age
+            };
+
+            // 3. Execute via PatientService with UIHelper handling database connection errors
             try
             {
-                var sql = "INSERT INTO dbo.tblPatients (PatientID, Name, Age, Gender, Address, ContactNo) VALUES (@id, @name, @age, @gender, @address, @contact)";
-                var rows = CreatePatient(sql,
-                    new SqlParameter("@id", string.IsNullOrWhiteSpace(id) ? (object)DBNull.Value : id),
-                    new SqlParameter("@name", name),
-                    new SqlParameter("@age", age),
-                    new SqlParameter("@gender", gender),
-                    new SqlParameter("@address", address),
-                    new SqlParameter("@contact", contact)
-                );
-
-                if (rows > 0)
+                int newId = _service.Create(patient);
+                if (newId > 0)
                 {
-                    MessageBox.Show("Patient added successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show($"Patient added successfully! Generated ID: {newId}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ClearFields();
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Failed to add patient record.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error("PatientInformationMaintenance: Error adding patient", ex);
-                MessageBox.Show("Error adding patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.HandleDatabaseError(ex, "adding patient");
             }
         }
 
         private void BtnUpdate_Click(object? sender, EventArgs e)
         {
-            // For update, Patient ID is strictly required along with other fields
             if (string.IsNullOrWhiteSpace(txtPatientID.Text))
             {
                 MessageBox.Show("Patient ID is required to update a record.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (!ValidateFields(out string validationError, requirePatientId: true))
+            var fieldsToCheck = new Dictionary<string, string>
+            {
+                { "Patient ID", txtPatientID.Text.Trim() },
+                { "Name", txtName.Text.Trim() },
+                { "Age", txtAge.Text.Trim() },
+                { "Gender", cbGender.SelectedItem?.ToString() ?? string.Empty },
+                { "Address", txtAddress.Text.Trim() },
+                { "Contact No.", txtContactNo.Text.Trim() }
+            };
+
+            if (!UIHelper.ValidateFields(fieldsToCheck, out string validationError))
             {
                 MessageBox.Show(validationError, "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var id = txtPatientID.Text.Trim();
-            if (!int.TryParse(txtAge.Text.Trim(), out var age))
+            if (!int.TryParse(txtPatientID.Text.Trim(), out var patientId) || !int.TryParse(txtAge.Text.Trim(), out var age))
             {
-                MessageBox.Show("Please enter a valid numeric value for Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please enter valid numeric values for Patient ID and Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var name = txtName.Text.Trim();
-            var gender = cbGender.SelectedItem?.ToString() ?? string.Empty;
-            var address = txtAddress.Text.Trim();
-            var contact = txtContactNo.Text.Trim();
+            if (_service == null)
+            {
+                MessageBox.Show("Database service is not initialized.", "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var patient = new Patient
+            {
+                PatientID = patientId,
+                FirstName = txtName.Text.Trim(),
+                LastName = "",
+                Gender = cbGender.SelectedItem?.ToString(),
+                Address = txtAddress.Text.Trim(),
+                ContactNumber = txtContactNo.Text.Trim(),
+                DateOfBirth = DateTime.Today.AddYears(-age)
+            };
 
             try
             {
-                var sql = "UPDATE dbo.tblPatients SET Name=@name, Age=@age, Gender=@gender, Address=@address, ContactNo=@contact WHERE PatientID=@id";
-                var rows = CreatePatient(sql,
-                    new SqlParameter("@name", name),
-                    new SqlParameter("@age", age),
-                    new SqlParameter("@gender", gender),
-                    new SqlParameter("@address", address),
-                    new SqlParameter("@contact", contact),
-                    new SqlParameter("@id", id)
-                );
-
+                int rows = _service.Update(patient);
                 if (rows > 0)
                 {
                     MessageBox.Show("Patient updated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -193,22 +161,20 @@ namespace UI
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No records were updated. Please check if the Patient ID exists.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error("PatientInformationMaintenance: Error updating patient", ex);
-                MessageBox.Show("Error updating patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.HandleDatabaseError(ex, "updating patient");
             }
         }
 
         private void BtnDelete_Click(object? sender, EventArgs e)
         {
-            var id = txtPatientID.Text.Trim();
-            if (string.IsNullOrWhiteSpace(id))
+            if (!int.TryParse(txtPatientID.Text.Trim(), out var patientId))
             {
-                MessageBox.Show("Patient ID is required for deletion.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("A valid numeric Patient ID is required for deletion.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -217,10 +183,15 @@ namespace UI
                 return;
             }
 
+            if (_service == null)
+            {
+                MessageBox.Show("Database service is not initialized.", "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             try
             {
-                var sql = "DELETE FROM dbo.tblPatients WHERE PatientID=@id";
-                var rows = CreatePatient(sql, new SqlParameter("@id", id));
+                int rows = _service.Delete(patientId);
                 if (rows > 0)
                 {
                     MessageBox.Show("Patient deleted successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -228,13 +199,12 @@ namespace UI
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No records were deleted. Patient ID may not exist.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error("PatientInformationMaintenance: Error deleting patient", ex);
-                MessageBox.Show("Error deleting patient: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.HandleDatabaseError(ex, "deleting patient");
             }
         }
 

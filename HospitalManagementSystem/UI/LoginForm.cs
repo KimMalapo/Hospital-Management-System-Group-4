@@ -20,19 +20,15 @@ namespace UI
         {
             InitializeComponent();
 
-            // --- HOVER EVENT WIRE-UPS ---
-            // Login Button Hover Effects
             btnLogin.MouseEnter += BtnLogin_MouseEnter;
             btnLogin.MouseLeave += BtnLogin_MouseLeave;
 
-            // Register Link Hover Effects (Optional underline change or color shift)
             linkRegister.MouseEnter += LinkRegister_MouseEnter;
             linkRegister.MouseLeave += LinkRegister_MouseLeave;
         }
 
         private static string GenerateJwtToken(string userId, string email)
         {
-            // secret from env or fallback to a local value
             var secret = Environment.GetEnvironmentVariable("HMS_JWT_SECRET") ?? "ReplaceThisWithASecureSecretInEnv";
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -53,17 +49,14 @@ namespace UI
         // --- LOGIN BUTTON HOVER LOGIC ---
         private void BtnLogin_MouseEnter(object? sender, EventArgs e)
         {
-            // Change to a lighter/brighter shade when hovered
             btnLogin.BackColor = Color.FromArgb(70, 130, 255);
         }
 
         private void BtnLogin_MouseLeave(object? sender, EventArgs e)
         {
-            // Revert back to original primary accent color
             btnLogin.BackColor = Color.FromArgb(52, 110, 245);
         }
 
-        // --- REGISTER LINK HOVER LOGIC ---
         private void LinkRegister_MouseEnter(object? sender, EventArgs e)
         {
             linkRegister.LinkColor = Color.FromArgb(30, 80, 200);
@@ -74,7 +67,6 @@ namespace UI
             linkRegister.LinkColor = Color.FromArgb(52, 110, 245);
         }
 
-        // Designer wires btnLogin to btnLogin_Click; forward to shared handler
         private void btnLogin_Click(object? sender, EventArgs e)
         {
             BtnLogin_Click(sender, e);
