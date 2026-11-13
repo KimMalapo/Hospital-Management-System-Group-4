@@ -74,6 +74,14 @@ BEGIN
             RETURN;
         END
 
+        -- An occupied room keeps its type and rate until the patient leaves
+        IF EXISTS (SELECT 1 FROM dbo.tblRoomAssignments WHERE RoomNo = @RoomNo AND DischargeDate IS NULL)
+           AND EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = @RoomNo AND (RoomType <> @RoomType OR Rate <> @Rate))
+        BEGIN
+            RAISERROR(N'The room is in use. Its type and rate cannot be changed while a patient is admitted.', 16, 1);
+            RETURN;
+        END
+
         UPDATE dbo.tblRooms
         SET    RoomType  = @RoomType,
                Rate      = @Rate,
@@ -93,13 +101,23 @@ CREATE PROCEDURE dbo.usp_tblRooms_Delete
 AS
 BEGIN
     SET NOCOUNT ON;
-    -- Soft delete
-    UPDATE dbo.tblRooms
-    SET    IsActive  = 0,
-           Status    = N'Maintenance',
-           UpdatedAt = SYSUTCDATETIME()
-    WHERE  RoomNo = @RoomNo;
+    BEGIN TRY
+        IF EXISTS (SELECT 1 FROM dbo.tblRoomAssignments WHERE RoomNo = @RoomNo AND DischargeDate IS NULL)
+        BEGIN
+            RAISERROR(N'The room is in use. Discharge the patient before deleting the room.', 16, 1);
+            RETURN;
+        END
 
-    SELECT @@ROWCOUNT AS AffectedRows;
+        -- Soft delete
+        UPDATE dbo.tblRooms
+        SET    IsActive  = 0,
+               Status    = N'Maintenance',
+               UpdatedAt = SYSUTCDATETIME()
+        WHERE  RoomNo = @RoomNo;
+
+        SELECT @@ROWCOUNT AS AffectedRows;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
 END
-GO
