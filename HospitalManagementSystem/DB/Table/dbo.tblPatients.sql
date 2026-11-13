@@ -18,3 +18,10 @@ GO
 CREATE NONCLUSTERED INDEX IX_tblPatients_Name
     ON dbo.tblPatients (LastName, FirstName)
     WHERE IsActive = 1;
+GO
+
+-- No two active patients with the same name and date of birth (NULL dates count as equal).
+-- If this fails on an old database, run DB/Script/CheckDuplicatePatients.sql first and fix the rows it lists.
+CREATE UNIQUE NONCLUSTERED INDEX UQ_tblPatients_Identity_Active
+    ON dbo.tblPatients (LastName, FirstName, DateOfBirth)
+    WHERE IsActive = 1;

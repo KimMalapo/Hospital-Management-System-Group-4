@@ -57,6 +57,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
+        DECLARE @Existing INT = (SELECT TOP (1) PatientID FROM dbo.tblPatients
+                                 WHERE IsActive = 1 AND FirstName = @FirstName AND LastName = @LastName
+                                   AND (DateOfBirth = @DateOfBirth OR (DateOfBirth IS NULL AND @DateOfBirth IS NULL)));
+        IF @Existing IS NOT NULL
+        BEGIN
+            DECLARE @m1 NVARCHAR(200) = N'A patient with the same name and date of birth already exists (PatientID ' + CAST(@Existing AS NVARCHAR(20)) + N').';
+            RAISERROR(@m1, 16, 1);
+        END
+
         INSERT INTO dbo.tblPatients
             (FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email)
         VALUES
@@ -82,18 +91,33 @@ CREATE PROCEDURE dbo.usp_tblPatients_Update
 AS
 BEGIN
     SET NOCOUNT ON;
-    UPDATE dbo.tblPatients
-    SET    FirstName     = @FirstName,
-           LastName      = @LastName,
-           DateOfBirth   = @DateOfBirth,
-           Gender        = @Gender,
-           ContactNumber = @ContactNumber,
-           Address       = @Address,
-           Email         = @Email,
-           UpdatedAt     = SYSUTCDATETIME()
-    WHERE  PatientID = @PatientID;
+    BEGIN TRY
+        DECLARE @Existing INT = (SELECT TOP (1) PatientID FROM dbo.tblPatients
+                                 WHERE IsActive = 1 AND PatientID <> @PatientID
+                                   AND FirstName = @FirstName AND LastName = @LastName
+                                   AND (DateOfBirth = @DateOfBirth OR (DateOfBirth IS NULL AND @DateOfBirth IS NULL)));
+        IF @Existing IS NOT NULL
+        BEGIN
+            DECLARE @m1 NVARCHAR(200) = N'Another patient with the same name and date of birth already exists (PatientID ' + CAST(@Existing AS NVARCHAR(20)) + N').';
+            RAISERROR(@m1, 16, 1);
+        END
 
-    SELECT @@ROWCOUNT AS AffectedRows;
+        UPDATE dbo.tblPatients
+        SET    FirstName     = @FirstName,
+               LastName      = @LastName,
+               DateOfBirth   = @DateOfBirth,
+               Gender        = @Gender,
+               ContactNumber = @ContactNumber,
+               Address       = @Address,
+               Email         = @Email,
+               UpdatedAt     = SYSUTCDATETIME()
+        WHERE  PatientID = @PatientID;
+
+        SELECT @@ROWCOUNT AS AffectedRows;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
 END
 GO
 
@@ -102,12 +126,33 @@ CREATE PROCEDURE dbo.usp_tblPatients_Delete
 AS
 BEGIN
     SET NOCOUNT ON;
-    -- Soft delete
-    UPDATE dbo.tblPatients
-    SET    IsActive  = 0,
-           UpdatedAt = SYSUTCDATETIME()
-    WHERE  PatientID = @PatientID;
+    BEGIN TRY
+        IF OBJECT_ID(N'dbo.tblAdmissions', N'U') IS NOT NULL
+        BEGIN
+            IF EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @PatientID AND Status = N'Admitted')
+                RAISERROR(N'This patient is currently admitted. Discharge the patient before deleting the record.', 16, 1);
 
-    SELECT @@ROWCOUNT AS AffectedRows;
+            IF OBJECT_ID(N'dbo.tblBills', N'U') IS NOT NULL
+            BEGIN
+                DECLARE @unpaid INT = 0;
+                EXEC sp_executesql
+                    N'SELECT @n = COUNT(*) FROM dbo.tblBills b JOIN dbo.tblAdmissions a ON a.AdmissionID = b.AdmissionID
+                      WHERE a.PatientID = @p AND b.Status IN (N''Open'', N''PartiallyPaid'')',
+                    N'@p INT, @n INT OUTPUT', @p = @PatientID, @n = @unpaid OUTPUT;
+                IF @unpaid > 0
+                    RAISERROR(N'This patient has an unpaid bill. Settle or void the bill before deleting the record.', 16, 1);
+            END
+        END
+
+        -- Soft delete (history is kept for reports and audit)
+        UPDATE dbo.tblPatients
+        SET    IsActive  = 0,
+               UpdatedAt = SYSUTCDATETIME()
+        WHERE  PatientID = @PatientID;
+
+        SELECT @@ROWCOUNT AS AffectedRows;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
 END
-GO
