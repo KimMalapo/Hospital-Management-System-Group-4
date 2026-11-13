@@ -1,88 +1,149 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
 using BusinessLogic;
-using System.IO;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 
 namespace UI
 {
+    /// <summary>
+    /// Start-up database check. It never creates a partial schema: if the database or any required table or
+    /// procedure is missing, it shows a clear message and returns false so the application can stop cleanly.
+    /// It also makes sure the demo accounts exist and that every stored password is a BCrypt hash.
+    /// </summary>
     internal static class DbInitializer
     {
-        // Patch: no-op update to keep file up-to-date.
-        // Ensure a working DB exists. Prefer configured DB; otherwise create a localdb fallback.
-        public static void EnsureDatabase()
+        /// <summary>The last problem found, or null when the database is ready.</summary>
+        public static string? StartupError { get; private set; }
+
+        // Objects the application cannot run without
+        private static readonly string[] RequiredTables =
         {
+            "tblUsers", "tblPatients", "tblRooms", "tblRoomAssignments", "tblRoomTypes", "tblDepartmentTypes",
+            "tblDiagnosisCodes", "tblDrugCategories", "tblAuditLog", "tblAdmissions", "tblServices",
+            "tblAdmissionCharges", "tblBills", "tblBillItems", "tblPayments"
+        };
+
+        private static readonly string[] RequiredProcedures =
+        {
+            "usp_tblUsers_GetByEmail", "usp_tblPatients_GetAll", "usp_tblRooms_GetAll",
+            "usp_tblAdmissions_Admit", "usp_tblServices_GetAll", "usp_tblAdmissionCharges_Add",
+            "usp_tblBills_Generate", "usp_tblPayments_Post", "usp_Report_BillingSummary", "usp_Dashboard_Counts"
+        };
+
+        /// <summary>Returns true when the application can start. Shows a message box when it cannot.</summary>
+        public static bool EnsureDatabase(bool showMessage = true)
+        {
+            StartupError = null;
             try
             {
-                // prefer the shared Config helper for connection string resolution
-                var configured = Config.GetConnectionString();
-                if (!string.IsNullOrEmpty(configured))
+                string connection;
+                try { connection = Config.GetConnectionString(); }
+                catch (Exception ex)
                 {
-                    // if configured DB is reachable, ensure passwords are hashed there
-                    if (TryOpen(configured))
-                    {
-                        MigratePlaintextPasswords(configured);
-                        return;
-                    }
+                    return Fail(ex.Message, showMessage);
                 }
 
-                // fallback: create localdb HospitalDB and ensure tblUsers exists
-                var masterConn = "Server=./SQLEXPRESS;Integrated Security=true;Initial Catalog=master;";
-                using (var m = new SqlConnection(masterConn))
-                {
-                    m.Open();
-                    using var c = m.CreateCommand();
-                    c.CommandText = "IF DB_ID('HospitalDB') IS NULL CREATE DATABASE [HospitalDB];";
-                    c.ExecuteNonQuery();
-                }
+                if (!TryOpen(connection, out var openError))
+                    return Fail("The application cannot connect to the database.\n\n" + openError +
+                                "\n\nCheck HMS_CONNECTION_STRING or appsettings.json, and that SQL Server / LocalDB is running. " +
+                                "See docs/DATABASE_SETUP.md.", showMessage);
 
-                var localConn = "Server=./SQLEXPRESS;Integrated Security=true;Initial Catalog=HospitalDB;";
-                using (var conn = new SqlConnection(localConn))
-                {
-                    conn.Open();
-                    using var cmd = conn.CreateCommand();
-                    cmd.CommandText = @"IF OBJECT_ID(N'dbo.tblUsers', N'U') IS NULL
-CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(200) NOT NULL, Password NVARCHAR(200) NOT NULL);";
-                    cmd.ExecuteNonQuery();
+                var missing = FindMissingObjects(connection);
+                if (missing.Count > 0)
+                    return Fail("The database is not fully set up. Missing: " + string.Join(", ", missing.Take(8)) +
+                                (missing.Count > 8 ? $" and {missing.Count - 8} more" : "") +
+                                ".\n\nPublish the DB project to your database (see docs/DATABASE_SETUP.md), then start the app again.",
+                                showMessage);
 
-                    using var countCmd = conn.CreateCommand();
-                    countCmd.CommandText = "SELECT COUNT(1) FROM dbo.tblUsers;";
-                    var cnt = Convert.ToInt32(countCmd.ExecuteScalar() ?? 0);
-                    if (cnt == 0)
-                    {
-                        var hashed = BCrypt.Net.BCrypt.HashPassword("admin123");
-                        using var insert = conn.CreateCommand();
-                        insert.CommandText = "INSERT INTO dbo.tblUsers (Email, Password) VALUES (@e, @p);";
-                        insert.Parameters.AddWithValue("@e", "admin@example.com");
-                        insert.Parameters.AddWithValue("@p", hashed);
-                        insert.ExecuteNonQuery();
-                    }
-
-                    MigratePlaintextPasswords(localConn);
-                }
-
-                try { File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "localdb_initialized.txt"), DateTime.UtcNow.ToString("o")); } catch (Exception logEx) { Logger.Error("DbInitializer.EnsureDatabase failed", logEx); }
+                EnsureDemoUsers(connection);
+                MigratePlaintextPasswords(connection);
+                return true;
             }
-            catch (Exception logEx)
+            catch (Exception ex)
             {
-                Logger.Error("DbInitializer.EnsureDatabase failed", logEx);
-                // best-effort only
+                Logger.Error("DbInitializer.EnsureDatabase failed", ex);
+                return Fail("Unexpected problem while checking the database: " + ex.Message, showMessage);
             }
         }
 
-        private static bool TryOpen(string connectionString)
+        private static bool Fail(string message, bool show)
+        {
+            StartupError = message;
+            Logger.Error("DbInitializer: " + message, new InvalidOperationException(message));
+            if (show)
+                MessageBox.Show(message, "Database not ready", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+
+        private static bool TryOpen(string connectionString, out string error)
         {
             try
             {
                 using var c = new SqlConnection(connectionString);
                 c.Open();
-                c.Close();
+                error = "";
                 return true;
             }
-            catch (Exception logEx)
+            catch (Exception ex)
             {
-                Logger.Error("DbInitializer.TryOpen failed", logEx);
+                Logger.Error("DbInitializer.TryOpen failed", ex);
+                error = ex.Message;
                 return false;
+            }
+        }
+
+        private static List<string> FindMissingObjects(string connectionString)
+        {
+            var missing = new List<string>();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            foreach (var t in RequiredTables)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT OBJECT_ID(@n, N'U')";
+                cmd.Parameters.AddWithValue("@n", "dbo." + t);
+                if (cmd.ExecuteScalar() is DBNull or null) missing.Add(t);
+            }
+            foreach (var p in RequiredProcedures)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT OBJECT_ID(@n, N'P')";
+                cmd.Parameters.AddWithValue("@n", "dbo." + p);
+                if (cmd.ExecuteScalar() is DBNull or null) missing.Add(p);
+            }
+            return missing;
+        }
+
+        /// <summary>
+        /// Creates the demo Admin and Staff accounts when no user with that e-mail exists. Passwords are hashed here,
+        /// never stored as plain text in SQL. Change them before any real use.
+        /// </summary>
+        private static void EnsureDemoUsers(string connectionString)
+        {
+            var demo = new[]
+            {
+                (Email: "admin@example.com", Password: "admin123", Role: "Admin"),
+                (Email: "staff@example.com", Password: "staff123", Role: "Staff")
+            };
+
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            foreach (var u in demo)
+            {
+                using var exists = conn.CreateCommand();
+                exists.CommandText = "SELECT COUNT(1) FROM dbo.tblUsers WHERE Email = @e";
+                exists.Parameters.AddWithValue("@e", u.Email);
+                if (Convert.ToInt32(exists.ExecuteScalar() ?? 0) > 0) continue;
+
+                using var insert = conn.CreateCommand();
+                insert.CommandText = "INSERT INTO dbo.tblUsers (Email, Password, Role) VALUES (@e, @p, @r);";
+                insert.Parameters.AddWithValue("@e", u.Email);
+                insert.Parameters.AddWithValue("@p", BCrypt.Net.BCrypt.HashPassword(u.Password));
+                insert.Parameters.AddWithValue("@r", u.Role);
+                insert.ExecuteNonQuery();
             }
         }
 
@@ -95,15 +156,14 @@ CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(
                 using var select = conn.CreateCommand();
                 select.CommandText = "SELECT UserID, Password FROM dbo.tblUsers";
                 using var reader = select.ExecuteReader();
-                var updates = new System.Collections.Generic.List<(int id, string hash)>();
+                var updates = new List<(int id, string hash)>();
                 while (reader.Read())
                 {
                     var id = reader.GetInt32(0);
                     var pwd = reader.IsDBNull(1) ? null : reader.GetString(1);
                     if (string.IsNullOrEmpty(pwd)) continue;
                     if (pwd.StartsWith("$2")) continue; // already BCrypt
-                    var hashed = BCrypt.Net.BCrypt.HashPassword(pwd);
-                    updates.Add((id, hashed));
+                    updates.Add((id, BCrypt.Net.BCrypt.HashPassword(pwd)));
                 }
                 reader.Close();
 
@@ -116,10 +176,9 @@ CREATE TABLE dbo.tblUsers (UserID INT IDENTITY(1,1) PRIMARY KEY, Email NVARCHAR(
                     upd.ExecuteNonQuery();
                 }
             }
-            catch (Exception logEx)
+            catch (Exception ex)
             {
-                Logger.Error("DbInitializer.MigratePlaintextPasswords failed", logEx);
-                // ignore migration failures
+                Logger.Error("DbInitializer.MigratePlaintextPasswords failed", ex);
             }
         }
     }
