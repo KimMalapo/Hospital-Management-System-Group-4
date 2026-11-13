@@ -2,7 +2,7 @@ CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Insert ON dbo.tblDiagnosisCodes AFTER I
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'INSERT', N'tblDiagnosisCodes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'INSERT', N'tblDiagnosisCodes',
            N'DiagnosisCodeID=' + CAST(i.DiagnosisCodeID AS NVARCHAR(50)),
            N'Code=' + ISNULL(i.Code,N'') + N';Description=' + ISNULL(i.Description,N'') +
            N';Status=' + ISNULL(i.Status,N'') + N';IsDeleted=' + CAST(ISNULL(i.IsDeleted,0) AS NVARCHAR(10))
@@ -14,7 +14,7 @@ CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Update ON dbo.tblDiagnosisCodes AFTER U
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'UPDATE', N'tblDiagnosisCodes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'UPDATE', N'tblDiagnosisCodes',
            N'DiagnosisCodeID=' + CAST(i.DiagnosisCodeID AS NVARCHAR(50)),
            N'Description: ' + ISNULL(d.Description,N'') + N' -> ' + ISNULL(i.Description,N'') +
            N';Status: ' + ISNULL(d.Status,N'') + N' -> ' + ISNULL(i.Status,N'') +
@@ -27,7 +27,7 @@ CREATE TRIGGER dbo.trg_tblDiagnosisCodes_Delete ON dbo.tblDiagnosisCodes AFTER D
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'DELETE', N'tblDiagnosisCodes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'DELETE', N'tblDiagnosisCodes',
            N'DiagnosisCodeID=' + CAST(d.DiagnosisCodeID AS NVARCHAR(50)),
            N'Code=' + ISNULL(d.Code,N'') + N';Description=' + ISNULL(d.Description,N'')
     FROM deleted d;
