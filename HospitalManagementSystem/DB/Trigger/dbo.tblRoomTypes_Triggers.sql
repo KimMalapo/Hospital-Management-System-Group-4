@@ -1,7 +1,7 @@
 CREATE TRIGGER dbo.trg_tblRoomTypes_Insert ON dbo.tblRoomTypes AFTER INSERT AS
 BEGIN SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'INSERT', N'tblRoomTypes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'INSERT', N'tblRoomTypes',
            N'RoomTypeID=' + CAST(i.RoomTypeID AS NVARCHAR(50)),
            N'Code=' + ISNULL(i.Code,N'') + N';Name=' + ISNULL(i.Name,N'') + N';Status=' + ISNULL(i.Status,N'')
     FROM inserted i;
@@ -11,7 +11,7 @@ GO
 CREATE TRIGGER dbo.trg_tblRoomTypes_Update ON dbo.tblRoomTypes AFTER UPDATE AS
 BEGIN SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'UPDATE', N'tblRoomTypes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'UPDATE', N'tblRoomTypes',
            N'RoomTypeID=' + CAST(i.RoomTypeID AS NVARCHAR(50)),
            N'Name: ' + ISNULL(d.Name,N'') + N' -> ' + ISNULL(i.Name,N'') +
            N';Status: ' + ISNULL(d.Status,N'') + N' -> ' + ISNULL(i.Status,N'') +
@@ -23,7 +23,7 @@ GO
 CREATE TRIGGER dbo.trg_tblRoomTypes_Delete ON dbo.tblRoomTypes AFTER DELETE AS
 BEGIN SET NOCOUNT ON;
     INSERT INTO dbo.tblAuditLog (Username, Action, TableName, KeyValues, ChangedValues)
-    SELECT SUSER_SNAME(), N'DELETE', N'tblRoomTypes',
+    SELECT COALESCE(CAST(SESSION_CONTEXT(N'AppUser') AS NVARCHAR(200)), SUSER_SNAME()), N'DELETE', N'tblRoomTypes',
            N'RoomTypeID=' + CAST(d.RoomTypeID AS NVARCHAR(50)),
            N'Code=' + ISNULL(d.Code,N'') + N';Name=' + ISNULL(d.Name,N'')
     FROM deleted d;
