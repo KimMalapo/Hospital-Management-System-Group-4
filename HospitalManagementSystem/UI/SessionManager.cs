@@ -1,24 +1,32 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BusinessLogic;
 
 namespace UI
 {
+    // REPLACES the existing UI/SessionManager.cs.
+    // Changes: keeps BusinessLogic.CurrentUser in sync (so services know who is logged in),
+    // clears everything on Logout, and raises SessionExpired when the token has expired.
     public static class SessionManager
     {
         private static string? _currentToken;
         private static ClaimsPrincipal? _currentUser;
 
+        /// <summary>Raised when IsAuthenticated finds an expired token. The landing page should show
+        /// "Your session expired" and return to LoginForm.</summary>
+        public static event Action? SessionExpired;
+
         public static void SetToken(string token)
         {
             _currentToken = token;
-            var auth = new AuthService();          // now works
-            _currentUser = auth.ValidateToken(token);
+            _currentUser = new AuthService().ValidateToken(token);
+            SyncCurrentUser();
         }
 
         public static void Logout()
         {
             _currentToken = null;
             _currentUser = null;
+            CurrentUser.Clear();
         }
 
         public static bool IsAuthenticated
@@ -26,9 +34,17 @@ namespace UI
             get
             {
                 if (string.IsNullOrEmpty(_currentToken)) return false;
-                var auth = new AuthService();
-                _currentUser = auth.ValidateToken(_currentToken);
-                return _currentUser != null;
+
+                _currentUser = new AuthService().ValidateToken(_currentToken, out var expired);
+                if (_currentUser == null)
+                {
+                    Logout();
+                    if (expired) SessionExpired?.Invoke();
+                    return false;
+                }
+
+                SyncCurrentUser();
+                return true;
             }
         }
 
@@ -40,5 +56,13 @@ namespace UI
 
         public static bool IsAdmin =>
             string.Equals(CurrentRole, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        private static void SyncCurrentUser()
+        {
+            if (CurrentEmail != null && CurrentRole != null)
+                CurrentUser.Set(CurrentEmail, CurrentRole);
+            else
+                CurrentUser.Clear();
+        }
     }
 }
