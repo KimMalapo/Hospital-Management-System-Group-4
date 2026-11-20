@@ -6,82 +6,83 @@ namespace BusinessLogic
 {
     public class LookupService
     {
-        private readonly LookupRepository _repo;
-        private readonly DbExecutor _db;
+        private readonly ILookupRepository _repo;
 
-        public LookupService(string connectionString)
+        public LookupService(string connectionString) : this(new LookupRepository(connectionString)) { }
+
+        public LookupService(ILookupRepository repository)
         {
-            _repo = new LookupRepository(connectionString);
-            _db = new DbExecutor(connectionString);
+            _repo = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        private string T(string key) =>
-            key.StartsWith("tbl", StringComparison.OrdinalIgnoreCase) ? key : "tbl" + key;
+        private static string NormalizeTable(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Lookup type is required.", nameof(key));
 
-        public List<LookupItem> GetAll(string key) => _repo.GetList(T(key));
-        public LookupItem? GetById(string key, int id) => _repo.GetById(T(key), id);
-        public List<LookupItem> Search(string key, string term) => _repo.Search(T(key), term);
+            var table = key.Trim();
+            if (!table.StartsWith("tbl", StringComparison.OrdinalIgnoreCase))
+                table = "tbl" + table;
+
+            return table.ToLowerInvariant() switch
+            {
+                "tbldiagnosiscodes" => "tblDiagnosisCodes",
+                "tbldrugcategories" => "tblDrugCategories",
+                "tblroomtypes" => "tblRoomTypes",
+                "tbldepartmenttypes" => "tblDepartmentTypes",
+                _ => throw new ArgumentException($"Unsupported lookup type '{key}'.", nameof(key))
+            };
+        }
+
+        public List<LookupItem> GetAll(string key) => _repo.GetList(NormalizeTable(key));
+        public LookupItem? GetById(string key, int id) => _repo.GetById(NormalizeTable(key), id);
+        public List<LookupItem> Search(string key, string term) =>
+            _repo.Search(NormalizeTable(key), string.IsNullOrWhiteSpace(term) ? string.Empty : term.Trim());
 
         public int Create(string key, LookupItem item)
         {
+            var table = NormalizeTable(key);
             if (string.IsNullOrWhiteSpace(item.Code))
                 throw new ArgumentException("Code is required");
             if (string.IsNullOrWhiteSpace(item.Name))
                 throw new ArgumentException("Name is required");
 
-            if (_repo.CodeExists(T(key), item.Code!))
+            if (_repo.CodeExists(table, item.Code!))
                 throw new InvalidOperationException($"Code '{item.Code}' already exists");
 
-            return _repo.Create(T(key), item);
+            return _repo.Create(table, item);
         }
 
         public int Update(string key, LookupItem item)
         {
+            var table = NormalizeTable(key);
             if (string.IsNullOrWhiteSpace(item.Name))
                 throw new ArgumentException("Name is required");
             if (string.IsNullOrWhiteSpace(item.Status))
                 throw new ArgumentException("Status is required");
 
-            var existing = _repo.GetById(T(key), item.Id)
+            var existing = _repo.GetById(table, item.Id)
                 ?? throw new ArgumentException("Record not found");
 
             if (!string.IsNullOrWhiteSpace(item.Code) && item.Code != existing.Code)
                 throw new InvalidOperationException("Code cannot be changed");
 
-            return _repo.Update(T(key), item);
+            return _repo.Update(table, item);
         }
 
         public int SoftDelete(string key, int id)
         {
-            var item = _repo.GetById(T(key), id)
+            var table = NormalizeTable(key);
+            var item = _repo.GetById(table, id)
                 ?? throw new ArgumentException("Record not found");
 
-            if (IsCodeInUse(key, item.Code))
+            if (_repo.IsCodeInUse(table, item.Code))
             {
                 throw new InvalidOperationException(
                     $"Cannot deactivate '{item.Code}' because it is still in use.");
             }
 
-            return _repo.SoftDelete(T(key), id);
-        }
-
-        private bool IsCodeInUse(string lookupKey, string? code)
-        {
-            if (string.IsNullOrWhiteSpace(code)) return false;
-
-            try
-            {
-                if (lookupKey.Contains("RoomType", StringComparison.OrdinalIgnoreCase))
-                {
-                    var dt = _db.Query(
-                        "SELECT COUNT(*) FROM dbo.tblRooms WHERE RoomType = @code",
-                        new Microsoft.Data.SqlClient.SqlParameter("@code", code));
-                    return Convert.ToInt32(dt.Rows[0][0]) > 0;
-                }
-            }
-            catch (Exception logEx) { Logger.Error("LookupService.IsCodeInUse failed", logEx); }
-
-            return false;
+            return _repo.SoftDelete(table, id);
         }
     }
 }

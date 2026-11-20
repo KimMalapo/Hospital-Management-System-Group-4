@@ -127,22 +127,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        IF OBJECT_ID(N'dbo.tblAdmissions', N'U') IS NOT NULL
-        BEGIN
-            IF EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @PatientID AND Status = N'Admitted')
-                RAISERROR(N'This patient is currently admitted. Discharge the patient before deleting the record.', 16, 1);
+        -- tblAdmissions (DB-01) and tblBills (DB-03) must exist; install those zips first
+        IF EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @PatientID AND Status = N'Admitted')
+            RAISERROR(N'This patient is currently admitted. Discharge the patient before deleting the record.', 16, 1);
 
-            IF OBJECT_ID(N'dbo.tblBills', N'U') IS NOT NULL
-            BEGIN
-                DECLARE @unpaid INT = 0;
-                EXEC sp_executesql
-                    N'SELECT @n = COUNT(*) FROM dbo.tblBills b JOIN dbo.tblAdmissions a ON a.AdmissionID = b.AdmissionID
-                      WHERE a.PatientID = @p AND b.Status IN (N''Open'', N''PartiallyPaid'')',
-                    N'@p INT, @n INT OUTPUT', @p = @PatientID, @n = @unpaid OUTPUT;
-                IF @unpaid > 0
-                    RAISERROR(N'This patient has an unpaid bill. Settle or void the bill before deleting the record.', 16, 1);
-            END
-        END
+        IF EXISTS (SELECT 1 FROM dbo.tblBills b JOIN dbo.tblAdmissions a ON a.AdmissionID = b.AdmissionID
+                   WHERE a.PatientID = @PatientID AND b.Status IN (N'Open', N'PartiallyPaid'))
+            RAISERROR(N'This patient has an unpaid bill. Settle or void the bill before deleting the record.', 16, 1);
 
         -- Soft delete (history is kept for reports and audit)
         UPDATE dbo.tblPatients

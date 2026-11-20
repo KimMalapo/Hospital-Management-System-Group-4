@@ -147,15 +147,10 @@ BEGIN
         IF @Status IS NULL RAISERROR(N'The admission was not found.', 16, 1);
         IF @Status <> N'Admitted' RAISERROR(N'Only an active admission can be cancelled.', 16, 1);
 
-        -- Cancel is only for admissions with no billing activity (DB-02 / DB-03 tables may not exist yet)
-        IF OBJECT_ID(N'dbo.tblAdmissionCharges', N'U') IS NOT NULL
-        BEGIN
-            DECLARE @n INT;
-            EXEC sp_executesql
-                N'SELECT @n = COUNT(*) FROM dbo.tblAdmissionCharges WHERE AdmissionID = @a AND IsVoided = 0',
-                N'@a INT, @n INT OUTPUT', @a = @AdmissionID, @n = @n OUTPUT;
-            IF @n > 0 RAISERROR(N'This admission already has charges. Discharge it instead of cancelling.', 16, 1);
-        END
+        -- Cancel is only for admissions with no charges (tblAdmissionCharges comes from DB-02; the project
+        -- shows an unresolved-reference warning for it until DB-02 is added)
+        IF EXISTS (SELECT 1 FROM dbo.tblAdmissionCharges WHERE AdmissionID = @AdmissionID AND IsVoided = 0)
+            RAISERROR(N'This admission already has charges. Discharge it instead of cancelling.', 16, 1);
 
         SELECT @RoomNo = RoomNo FROM dbo.tblRoomAssignments WHERE AssignmentID = @AssignmentID;
 
@@ -196,13 +191,9 @@ BEGIN
         IF @Status <> N'Admitted' RAISERROR(N'This admission is not active.', 16, 1);
 
         -- Rule: a patient is discharged only when a non-voided bill exists and is fully paid
-        IF OBJECT_ID(N'dbo.tblBills', N'U') IS NULL
-            RAISERROR(N'Billing is not installed in this database.', 16, 1);
-        DECLARE @ok INT = 0;
-        EXEC sp_executesql
-            N'SELECT @ok = COUNT(*) FROM dbo.tblBills WHERE AdmissionID = @a AND Status = N''Paid''',
-            N'@a INT, @ok INT OUTPUT', @a = @AdmissionID, @ok = @ok OUTPUT;
-        IF @ok = 0 RAISERROR(N'The bill must be generated and fully paid before discharge.', 16, 1);
+        -- (tblBills comes from DB-03; unresolved-reference warning until it is added)
+        IF NOT EXISTS (SELECT 1 FROM dbo.tblBills WHERE AdmissionID = @AdmissionID AND Status = N'Paid')
+            RAISERROR(N'The bill must be generated and fully paid before discharge.', 16, 1);
 
         SELECT @RoomNo = RoomNo FROM dbo.tblRoomAssignments WHERE AssignmentID = @AssignmentID;
 
