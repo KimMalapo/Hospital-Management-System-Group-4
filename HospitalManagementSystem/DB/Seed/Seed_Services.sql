@@ -1,4 +1,5 @@
 -- Service catalog (re-runnable: a service is inserted only when its code is missing)
+SET NOCOUNT ON;
 
 IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'CONS-GEN' AND IsActive = 1)
     INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)

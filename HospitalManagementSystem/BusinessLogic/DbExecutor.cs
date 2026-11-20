@@ -18,7 +18,15 @@ namespace BusinessLogic
         private SqlConnection OpenConnection()
         {
             var conn = new SqlConnection(_connectionString);
-            conn.Open();
+            try
+            {
+                conn.Open();
+            }
+            catch
+            {
+                conn.Dispose();
+                throw;
+            }
 
             var user = CurrentUser.Email;
             if (!string.IsNullOrWhiteSpace(user))

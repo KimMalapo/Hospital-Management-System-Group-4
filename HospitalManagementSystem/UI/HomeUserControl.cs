@@ -1,44 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace UI
 {
     public partial class HomeUserControl : UserControl
     {
-        UILandingPage landingPage;
         public HomeUserControl()
         {
             InitializeComponent();
-            landingPage = (UILandingPage)this.FindForm();
+            UITheme.Apply(this);
+            panel3.BackColor = Color.White;
+            panel4.BackColor = Color.White;
+            panel5.BackColor = Color.White;
+            panel6.BackColor = Color.White;
         }
 
         private void btnRums_Click(object sender, EventArgs e)
         {
-            RoomManagementUserControl userControl = new RoomManagementUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
         }
 
         private void btnPatients1_Click(object sender, EventArgs e)
         {
-            PatientMaintenanceUserControl userControl = new PatientMaintenanceUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
         }
 
         private void btnMdata_Click(object sender, EventArgs e)
         {
-            MasterDataUserControl userControl = new MasterDataUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<MasterDataUserControl>(pnlUCHandler);
         }
     }
 }

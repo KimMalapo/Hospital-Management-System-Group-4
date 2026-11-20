@@ -19,7 +19,14 @@ INSERT @r SELECT N'procedure dbo.' + n, CASE WHEN OBJECT_ID(N'dbo.' + n, N'P') I
 INSERT @r SELECT N'audit triggers on new tables (expect 15)', CASE WHEN
     (SELECT COUNT(*) FROM sys.triggers WHERE name LIKE N'trg_tblAdmission%' OR name LIKE N'trg_tblServices%'
         OR name LIKE N'trg_tblBills%' OR name LIKE N'trg_tblPayments%') = 15 THEN N'OK' ELSE N'CHECK' END;
-INSERT @r SELECT N'demo patients (expect 10)', CASE WHEN (SELECT COUNT(*) FROM dbo.tblPatients WHERE Email LIKE N'%@demo.hms') = 10 THEN N'OK' ELSE N'CHECK' END;
+INSERT @r SELECT N'demo patients (expect 20)', CASE WHEN
+    (SELECT COUNT(*) FROM dbo.tblPatients WHERE Email IN
+        (N'maria.santos@demo.hms', N'juan.delacruz@demo.hms', N'ana.reyes@demo.hms', N'pedro.garcia@demo.hms',
+         N'liza.mendoza@demo.hms', N'carlo.ramos@demo.hms', N'grace.villanueva@demo.hms', N'mark.torres@demo.hms',
+         N'joy.aquino@demo.hms', N'ramon.bautista@demo.hms', N'noel.villareal@demo.hms', N'rosa.dizon@demo.hms',
+         N'paolo.gonzales@demo.hms', N'teresa.chua@demo.hms', N'francis.lim@demo.hms', N'elena.navarro@demo.hms',
+         N'luis.fernandez@demo.hms', N'bea.castillo@demo.hms', N'andres.ramos@demo.hms', N'camille.flores@demo.hms')) = 20
+    THEN N'OK' ELSE N'CHECK' END;
 INSERT @r SELECT N'a discharged admission with a paid bill', CASE WHEN EXISTS
     (SELECT 1 FROM dbo.tblAdmissions a JOIN dbo.tblBills b ON b.AdmissionID = a.AdmissionID
      WHERE a.Status = N'Discharged' AND b.Status = N'Paid') THEN N'OK' ELSE N'CHECK' END;

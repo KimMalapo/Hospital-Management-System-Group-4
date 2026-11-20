@@ -16,8 +16,8 @@ CREATE TABLE dbo.tblRoomAssignments
 );
 GO
 
--- Only one open assignment per room
-CREATE UNIQUE NONCLUSTERED INDEX UQ_tblRoomAssignments_OpenRoom
+-- Supports counting concurrent occupants for capacity checks; room-level locking serializes admission.
+CREATE NONCLUSTERED INDEX IX_tblRoomAssignments_OpenRoom
     ON dbo.tblRoomAssignments (RoomNo)
     WHERE DischargeDate IS NULL;
 GO

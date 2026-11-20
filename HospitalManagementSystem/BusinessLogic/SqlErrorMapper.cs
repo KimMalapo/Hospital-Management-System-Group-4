@@ -40,7 +40,7 @@ public static class SqlErrorMapper
             case 4060:
             case 18456:
                 return new ValidationException(
-                    "Cannot connect to the database. Check that SQL Server LocalDB is running and the connection string is correct.", null, inner);
+                    "Cannot connect to the database. Check that SQL Server is running and the server, database, and authentication settings in the connection string are correct.", null, inner);
 
             default:
                 return new ValidationException("Something went wrong while saving. The details were written to the error log.", null, inner);

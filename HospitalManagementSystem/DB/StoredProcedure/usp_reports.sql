@@ -89,7 +89,15 @@ CREATE PROCEDURE dbo.usp_Report_RoomOccupancy
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT r.RoomNo, r.RoomType, r.Rate, r.Status,
+    SELECT r.RoomNo, r.RoomType, r.Rate, r.Capacity,
+           (SELECT COUNT(*) FROM dbo.tblRoomAssignments currentAssignment
+            WHERE currentAssignment.RoomNo = r.RoomNo AND currentAssignment.DischargeDate IS NULL) AS OccupiedBeds,
+           r.Capacity - (SELECT COUNT(*) FROM dbo.tblRoomAssignments currentAssignment
+                         WHERE currentAssignment.RoomNo = r.RoomNo AND currentAssignment.DischargeDate IS NULL) AS AvailableBeds,
+           CASE WHEN r.Status IN (N'Maintenance', N'Reserved') THEN r.Status
+                WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments currentAssignment
+                      WHERE currentAssignment.RoomNo = r.RoomNo AND currentAssignment.DischargeDate IS NULL) >= r.Capacity
+                THEN N'Occupied' ELSE N'Available' END AS Status,
            pt.LastName + N', ' + pt.FirstName AS PatientName,
            ra.AdmitDate,
            CASE WHEN ra.AssignmentID IS NULL THEN NULL
@@ -125,7 +133,8 @@ BEGIN
     SET NOCOUNT ON;
     SELECT
         (SELECT COUNT(*) FROM dbo.tblAdmissions WHERE Status = N'Admitted')                       AS ActiveAdmissions,
-        (SELECT COUNT(*) FROM dbo.tblRooms WHERE IsActive = 1 AND Status = N'Available')           AS AvailableRooms,
+        (SELECT COUNT(*) FROM dbo.tblRooms r WHERE r.IsActive = 1 AND r.Status NOT IN (N'Maintenance', N'Reserved')
+            AND (SELECT COUNT(*) FROM dbo.tblRoomAssignments a WHERE a.RoomNo = r.RoomNo AND a.DischargeDate IS NULL) < r.Capacity) AS AvailableRooms,
         (SELECT COUNT(*) FROM dbo.tblBills WHERE Status IN (N'Open', N'PartiallyPaid'))            AS UnpaidBills,
         (SELECT ISNULL(SUM(Amount), 0) FROM dbo.tblPayments
           WHERE Status = N'Posted' AND PaymentDate >= CAST(SYSUTCDATETIME() AS DATE))              AS TodaysCollections;

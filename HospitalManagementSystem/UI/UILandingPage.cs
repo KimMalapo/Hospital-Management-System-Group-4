@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace UI
@@ -13,60 +8,107 @@ namespace UI
         public UILandingPage()
         {
             InitializeComponent();
+            UITheme.Apply(this);
         }
 
         private void btnLogout_Click(object sender, EventArgs e)
         {
-            this.Close();
+            SessionManager.Logout();
+            ReturnToLogin();
         }
 
         private void btnHome_Click(object sender, EventArgs e)
         {
-            HomeUserControl homeUserControl = new HomeUserControl();
-            homeUserControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(homeUserControl);
+            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+        }
 
+        private void btnAdmission_Click(object sender, EventArgs e)
+        {
+            var view = new AdmissionUserControl();
+            view.AdmissionCreated += AdmissionUserControl_AdmissionCreated;
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void btnActiveAdmissions_Click(object sender, EventArgs e)
+        {
+            ShowActiveAdmissions();
+        }
+
+        private void btnBilling_Click(object sender, EventArgs e)
+        {
+            UIHelper.ShowView(pnlUCHandler, new BillingUserControl());
         }
 
         private void UILandingPage_Load(object sender, EventArgs e)
         {
-            HomeUserControl homeUserControl = new HomeUserControl();
-            homeUserControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(homeUserControl);
+            if (!SessionManager.IsAuthenticated)
+            {
+                MessageBox.Show("Your session is no longer valid. Please sign in again.", "Sign-in required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ReturnToLogin();
+                return;
+            }
+
+            lblSignedInAs.Text = SessionManager.CurrentEmail ?? "Unknown";
+            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+        }
+
+        private void ReturnToLogin()
+        {
+            var loginForm = Application.OpenForms.OfType<LoginForm>().FirstOrDefault() ?? new LoginForm();
+            loginForm.Show();
+            Close();
         }
 
         private void btnPatientMaintenance_Click(object sender, EventArgs e)
         {
-            PatientMaintenanceUserControl userControl = new PatientMaintenanceUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
         }
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            UnifiedSearchUserControl userControl = new UnifiedSearchUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<UnifiedSearchUserControl>(pnlUCHandler);
         }
 
         private void btnMasterData_Click(object sender, EventArgs e)
         {
-            MasterDataUserControl userControl = new MasterDataUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<MasterDataUserControl>(pnlUCHandler);
         }
 
         private void btnRoom_Click(object sender, EventArgs e)
         {
-            RoomManagementUserControl userControl = new RoomManagementUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
+        }
+
+        private void AdmissionUserControl_AdmissionCreated(object? sender, AdmissionCreatedEventArgs e)
+        {
+            ShowActiveAdmissions();
+        }
+
+        private void ShowActiveAdmissions()
+        {
+            var view = new ActiveAdmissionsUserControl();
+            view.ActionRequested += ActiveAdmissionsUserControl_ActionRequested;
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void ActiveAdmissionsUserControl_ActionRequested(object? sender, ActiveAdmissionActionEventArgs e)
+        {
+            if (e.Action == ActiveAdmissionAction.ViewBill)
+            {
+                UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));
+                return;
+            }
+
+            var action = e.Action switch
+            {
+                ActiveAdmissionAction.AddCharges => "Add charges",
+                ActiveAdmissionAction.ViewBill => "View bill",
+                ActiveAdmissionAction.Discharge => "Discharge",
+                _ => "Continue"
+            };
+            MessageBox.Show(this,
+                $"{action} for admission {e.AdmissionNo} will be available when its workflow screen is implemented.",
+                "Workflow screen not available", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

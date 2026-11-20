@@ -1,3 +1,5 @@
+using BusinessLogic;
+
 namespace UI
 {
     internal static class Program
@@ -8,9 +10,18 @@ namespace UI
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+
+            try
+            {
+                // Show the database readiness issue, but keep the application available for troubleshooting.
+                DbInitializer.EnsureDatabase(showMessage: true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Program.Startup failed", ex);
+            }
+
             Application.Run(new LoginForm());
         }
     }

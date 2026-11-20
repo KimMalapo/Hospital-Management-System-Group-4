@@ -7,6 +7,52 @@ namespace UI
 {
     public static class UIHelper
     {
+        public static void ShowView<T>(Panel host) where T : UserControl, new()
+        {
+            ArgumentNullException.ThrowIfNull(host);
+
+            if (host.Controls.Count == 1 && host.Controls[0] is T)
+                return;
+
+            ShowView(host, new T());
+        }
+
+        public static void ShowView(Panel host, UserControl view)
+        {
+            ArgumentNullException.ThrowIfNull(host);
+            ArgumentNullException.ThrowIfNull(view);
+
+            if (host.Controls.Count == 1 && host.Controls[0].GetType() == view.GetType())
+            {
+                view.Dispose();
+                return;
+            }
+
+            host.SuspendLayout();
+            try
+            {
+                while (host.Controls.Count > 0)
+                {
+                    var currentView = host.Controls[0];
+                    host.Controls.Remove(currentView);
+                    currentView.Dispose();
+                }
+
+                view.Dock = DockStyle.Fill;
+                host.Controls.Add(view);
+            }
+            catch
+            {
+                if (!view.IsDisposed)
+                    view.Dispose();
+                throw;
+            }
+            finally
+            {
+                host.ResumeLayout(true);
+            }
+        }
+
         /// <summary>
         /// Checks a dictionary of field names and values. Returns true if all are filled, 
         /// or false with a detailed list of missing fields.

@@ -1,6 +1,10 @@
 -- Post-deployment script: runs after every publish, so every statement must be re-runnable.
 -- Seeds example master data only when missing.
 
+:r .\Seed\Seed_Lookups.sql
+:r .\Seed\Seed_Services.sql
+:r .\Seed\Seed_Demo.sql
+
 IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = 'A00')
     INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status, Notes) VALUES ('A00', 'Cholera', 'Active', NULL);
 

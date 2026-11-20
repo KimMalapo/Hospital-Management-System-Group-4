@@ -55,7 +55,10 @@ public class ErrorHandlingTests
     public void Timeout_and_connection_errors_have_their_own_messages()
     {
         Assert.Contains("too long", SqlErrorMapper.FromNumber(-2, "x").Message);
-        Assert.Contains("connect", SqlErrorMapper.FromNumber(53, "x").Message);
+        var connectionError = SqlErrorMapper.FromNumber(53, "x").Message;
+        Assert.Contains("connect", connectionError);
+        Assert.Contains("server, database, and authentication", connectionError);
+        Assert.DoesNotContain("LocalDB", connectionError);
     }
 
     [Fact]
@@ -120,5 +123,12 @@ public class ErrorHandlingTests
             new Patient { FirstName = "A", LastName = "B", Email = "not-an-email" }));
         Assert.Throws<ValidationException>(() => PatientValidator.Validate(
             new Patient { FirstName = "A", LastName = "B", ContactNumber = "abc" }));
+    }
+
+    [Fact]
+    public void PatientValidator_rejects_birth_dates_older_than_supported_range()
+    {
+        Assert.Throws<ValidationException>(() => PatientValidator.Validate(
+            new Patient { FirstName = "Ana", LastName = "Reyes", DateOfBirth = DateTime.Today.AddYears(-151) }));
     }
 }

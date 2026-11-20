@@ -420,7 +420,7 @@
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(250, 60);
             btnDelete.TabIndex = 5;
-            btnDelete.Text = "Delete Record";
+            btnDelete.Text = "Deactivate Patient";
             btnDelete.UseVisualStyleBackColor = false;
             btnDelete.Click += btnDelete_Click;
             // 
