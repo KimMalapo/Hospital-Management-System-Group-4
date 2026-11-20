@@ -9,8 +9,9 @@ namespace UI
     /// The single place the app reads configuration from.
     /// Order of precedence for the connection string:
     ///   1. HMS_CONNECTION_STRING environment variable
-    ///   2. appsettings.Local.json  (per-machine, git-ignored)
-    ///   3. appsettings.json        (shared defaults, LocalDB)
+    ///   2. ConnectionStrings__DefaultConnection environment variable
+    ///   3. appsettings.Local.json  (per-machine, git-ignored)
+    ///   4. appsettings.json        (shared defaults)
     /// </summary>
     public static class Config
     {

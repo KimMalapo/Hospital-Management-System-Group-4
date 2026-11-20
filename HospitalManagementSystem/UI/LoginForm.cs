@@ -1,16 +1,6 @@
 using BusinessLogic;
-
 using System;
-using System.Data;
 using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using BCrypt.Net;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
-using System.Security.Claims;
-using System.Text;
 
 namespace UI
 {
@@ -25,26 +15,13 @@ namespace UI
 
             linkRegister.MouseEnter += LinkRegister_MouseEnter;
             linkRegister.MouseLeave += LinkRegister_MouseLeave;
+            linkRegister.Click += LinkRegister_Click;
         }
 
-        private static string GenerateJwtToken(string userId, string email)
+        private void LinkRegister_Click(object? sender, EventArgs e)
         {
-            var secret = Environment.GetEnvironmentVariable("HMS_JWT_SECRET") ?? "ReplaceThisWithASecureSecretInEnv";
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var claims = new[] {
-                new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-            var token = new JwtSecurityToken(
-                issuer: "HMS",
-                audience: "HMSClients",
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
-                signingCredentials: creds
-            );
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            using var registerForm = new RegisterForm();
+            registerForm.ShowDialog(this);
         }
         // --- LOGIN BUTTON HOVER LOGIC ---
         private void BtnLogin_MouseEnter(object? sender, EventArgs e)
@@ -83,56 +60,17 @@ namespace UI
                 return;
             }
 
-            string connStr;
             try
             {
-                connStr = Config.GetConnectionString();
-            }
-            catch (InvalidOperationException cfgEx)
-            {
-                Logger.Error("LoginForm: connection string is not configured", cfgEx);
-                MessageBox.Show("Database connection string is not configured. Set environment variable 'HMS_CONNECTION_STRING' or provide UI/appsettings.json.", "Configuration", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+                if (!AuthService.IsConfigured)
+                    throw new InvalidOperationException(AuthService.ConfigurationMessage);
 
-            try
-            {
-                using var conn = new SqlConnection(connStr);
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT UserID, Email, Password FROM dbo.tblUsers WHERE Email = @email OR Email = @username";
-                cmd.Parameters.AddWithValue("@email", username);
-                cmd.Parameters.AddWithValue("@username", username);
-                conn.Open();
-                using var reader = cmd.ExecuteReader();
-                int userId = -1;
-                string? storedHash = null;
-                string? email = null;
-                if (reader.Read())
+                var result = new UserService(Config.GetConnectionString()).Login(username, password);
+                if (result.Success)
                 {
-                    userId = reader.GetInt32(0);
-                    email = reader.IsDBNull(1) ? null : reader.GetString(1);
-                    storedHash = reader.IsDBNull(2) ? null : reader.GetString(2);
-                }
-
-                if (userId != -1 && storedHash != null && BCrypt.Net.BCrypt.Verify(password, storedHash))
-                {
-                    // generate JWT token
-                    var token = GenerateJwtToken(userId.ToString(), email ?? username);
-                    MessageBox.Show("Login successful", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // store token in-memory for this session (simple approach)
-                    try
-                    {
-                        Application.UserAppDataRegistry.SetValue("AuthToken", token);
-                        var auth = new AuthService();
-                        auth.ValidateToken(token);   // or ValidateToken;
-                    }
-                    catch (Exception logEx)
-                    {
-                        Logger.Error("LoginForm: could not store/validate auth token", logEx);
-                        // ignore registry write failures
-                    }
-
-                    var main = new RoomManagement();
+                    var token = new AuthService().CreateToken(username, result.Role);
+                    SessionManager.SetToken(token);
+                    var main = new UILandingPage();
                     main.Show();
                     this.Hide();
                 }
@@ -141,10 +79,15 @@ namespace UI
                     MessageBox.Show("Invalid email/username or password.", "Authentication Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
+            catch (InvalidOperationException ex)
+            {
+                Logger.Error("LoginForm: configuration error", ex);
+                MessageBox.Show(ex.Message, "Configuration", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             catch (Exception ex)
             {
                 Logger.Error("LoginForm: login failed while connecting to database", ex);
-                MessageBox.Show($"Error connecting to database: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Unable to sign in. Check the database connection and try again.", "Sign-in failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

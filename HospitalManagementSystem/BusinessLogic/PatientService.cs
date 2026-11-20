@@ -17,8 +17,8 @@ namespace BusinessLogic
         public DataTable GetAll() =>
             _db.QuerySP("usp_tblPatients_GetAll");
 
-        // Old name the UI is calling
-        public DataTable GetPatients(string sql = null) => GetAll();
+        public DataTable GetPatients(string? searchTerm = null) =>
+            string.IsNullOrWhiteSpace(searchTerm) ? GetAll() : Search(searchTerm.Trim());
 
         public Patient? GetById(int id)
         {

@@ -15,14 +15,8 @@ BEGIN
         IF @Status <> N'Admitted' RAISERROR(N'Charges can only be added to an active admission.', 16, 1);
 
         -- A bill that already exists (not voided) freezes the charges
-        IF OBJECT_ID(N'dbo.tblBills', N'U') IS NOT NULL
-        BEGIN
-            DECLARE @b INT = 0;
-            EXEC sp_executesql
-                N'SELECT @b = COUNT(*) FROM dbo.tblBills WHERE AdmissionID = @a AND Status <> N''Voided''',
-                N'@a INT, @b INT OUTPUT', @a = @AdmissionID, @b = @b OUTPUT;
-            IF @b > 0 RAISERROR(N'A bill was already generated. Void it before adding charges.', 16, 1);
-        END
+        IF EXISTS (SELECT 1 FROM dbo.tblBills WHERE AdmissionID = @AdmissionID AND Status <> N'Voided')
+            RAISERROR(N'A bill was already generated. Void it before adding charges.', 16, 1);
 
         DECLARE @Name NVARCHAR(200), @Price DECIMAL(10,2), @Active BIT;
         SELECT @Name = Name, @Price = UnitPrice, @Active = IsActive FROM dbo.tblServices WHERE ServiceID = @ServiceID;
@@ -59,14 +53,8 @@ BEGIN
         IF @Adm IS NULL RAISERROR(N'The charge was not found.', 16, 1);
         IF @Voided = 1 RAISERROR(N'This charge is already voided.', 16, 1);
 
-        IF OBJECT_ID(N'dbo.tblBills', N'U') IS NOT NULL
-        BEGIN
-            DECLARE @b INT = 0;
-            EXEC sp_executesql
-                N'SELECT @b = COUNT(*) FROM dbo.tblBills WHERE AdmissionID = @a AND Status <> N''Voided''',
-                N'@a INT, @b INT OUTPUT', @a = @Adm, @b = @b OUTPUT;
-            IF @b > 0 RAISERROR(N'A bill was already generated. Void it before voiding charges.', 16, 1);
-        END
+        IF EXISTS (SELECT 1 FROM dbo.tblBills WHERE AdmissionID = @Adm AND Status <> N'Voided')
+            RAISERROR(N'A bill was already generated. Void it before voiding charges.', 16, 1);
 
         UPDATE dbo.tblAdmissionCharges
         SET    IsVoided = 1, VoidReason = LTRIM(RTRIM(@Reason)), VoidedBy = @VoidedBy, VoidedAt = SYSUTCDATETIME()

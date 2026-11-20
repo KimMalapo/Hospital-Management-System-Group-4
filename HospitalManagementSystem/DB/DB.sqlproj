@@ -70,6 +70,11 @@
     <Build Include="Table\dbo.tblPatients.sql" />
     <Build Include="Table\dbo.tblRooms.sql" />
     <Build Include="Table\dbo.tblRoomAssignments.sql" />
+    <Build Include="Table\dbo.tblAdmissions.sql" />
+    <Build Include="Table\dbo.tblServices.sql" />
+    <Build Include="Table\dbo.tblAdmissionCharges.sql" />
+    <Build Include="Table\dbo.tblBills.sql" />
+    <Build Include="Table\dbo.tblPayments.sql" />
     <Build Include="Trigger\dbo.tblDiagnosisCodes_Triggers.sql" />
     <Build Include="Trigger\dbo.tblDrugCategories_Triggers.sql" />
     <Build Include="Trigger\dbo.tblRoomTypes_Triggers.sql" />
@@ -85,6 +90,12 @@
     <Build Include="StoredProcedure\usp_tblPatients.sql" />
     <Build Include="StoredProcedure\usp_tblRooms.sql" />
     <Build Include="StoredProcedure\usp_tblRoomAssignments.sql" />
+    <Build Include="StoredProcedure\usp_tblAdmissions.sql" />
+    <Build Include="StoredProcedure\usp_tblServices.sql" />
+    <Build Include="StoredProcedure\usp_tblAdmissionCharges.sql" />
+    <Build Include="StoredProcedure\usp_tblBills.sql" />
+    <Build Include="StoredProcedure\usp_tblPayments.sql" />
+    <Build Include="StoredProcedure\usp_reports.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Script.PostDeployment.sql" />

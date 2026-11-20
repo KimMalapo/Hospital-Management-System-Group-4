@@ -55,7 +55,10 @@ public class ErrorHandlingTests
     public void Timeout_and_connection_errors_have_their_own_messages()
     {
         Assert.Contains("too long", SqlErrorMapper.FromNumber(-2, "x").Message);
-        Assert.Contains("connect", SqlErrorMapper.FromNumber(53, "x").Message);
+        var connectionError = SqlErrorMapper.FromNumber(53, "x").Message;
+        Assert.Contains("connect", connectionError);
+        Assert.Contains("server, database, and authentication", connectionError);
+        Assert.DoesNotContain("LocalDB", connectionError);
     }
 
     [Fact]

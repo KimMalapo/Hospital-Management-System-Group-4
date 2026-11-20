@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 
 namespace UI
@@ -17,56 +12,53 @@ namespace UI
 
         private void btnLogout_Click(object sender, EventArgs e)
         {
-            this.Close();
+            SessionManager.Logout();
+            ReturnToLogin();
         }
 
         private void btnHome_Click(object sender, EventArgs e)
         {
-            HomeUserControl homeUserControl = new HomeUserControl();
-            homeUserControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(homeUserControl);
-
+            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
         }
 
         private void UILandingPage_Load(object sender, EventArgs e)
         {
-            HomeUserControl homeUserControl = new HomeUserControl();
-            homeUserControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(homeUserControl);
+            if (!SessionManager.IsAuthenticated)
+            {
+                MessageBox.Show("Your session is no longer valid. Please sign in again.", "Sign-in required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ReturnToLogin();
+                return;
+            }
+
+            lblSignedInAs.Text = SessionManager.CurrentEmail ?? "Unknown";
+            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+        }
+
+        private void ReturnToLogin()
+        {
+            var loginForm = Application.OpenForms.OfType<LoginForm>().FirstOrDefault() ?? new LoginForm();
+            loginForm.Show();
+            Close();
         }
 
         private void btnPatientMaintenance_Click(object sender, EventArgs e)
         {
-            PatientMaintenanceUserControl userControl = new PatientMaintenanceUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
         }
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
-            UnifiedSearchUserControl userControl = new UnifiedSearchUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<UnifiedSearchUserControl>(pnlUCHandler);
         }
 
         private void btnMasterData_Click(object sender, EventArgs e)
         {
-            MasterDataUserControl userControl = new MasterDataUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<MasterDataUserControl>(pnlUCHandler);
         }
 
         private void btnRoom_Click(object sender, EventArgs e)
         {
-            RoomManagementUserControl userControl = new RoomManagementUserControl();
-            userControl.Dock = DockStyle.Fill;
-            pnlUCHandler.Controls.Clear();
-            pnlUCHandler.Controls.Add(userControl);
+            UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
         }
     }
 }

@@ -6,7 +6,19 @@ using Model;
 
 namespace BusinessLogic
 {
-    public class LookupRepository
+    public interface ILookupRepository
+    {
+        List<LookupItem> GetList(string table);
+        LookupItem? GetById(string table, int id);
+        bool CodeExists(string table, string code);
+        int Create(string table, LookupItem item);
+        int Update(string table, LookupItem item);
+        int SoftDelete(string table, int id);
+        bool IsCodeInUse(string table, string? code);
+        List<LookupItem> Search(string table, string term);
+    }
+
+    public class LookupRepository : ILookupRepository
     {
         private readonly string _cs;
 
@@ -70,6 +82,20 @@ namespace BusinessLogic
             cmd.Parameters.AddWithValue("@Notes", (object?)item.Notes ?? DBNull.Value);
             conn.Open();
             return cmd.ExecuteNonQuery();
+        }
+
+        public bool IsCodeInUse(string table, string? code)
+        {
+            if (!string.Equals(table, "tblRoomTypes", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(code))
+                return false;
+
+            using var conn = new SqlConnection(_cs);
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM dbo.tblRooms WHERE RoomType = @code", conn);
+            cmd.Parameters.AddWithValue("@code", code);
+            conn.Open();
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 0) > 0;
         }
 
         public int SoftDelete(string table, int id)
