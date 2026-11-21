@@ -1,6 +1,5 @@
--- Demo data for the defense. Every demo patient has an e-mail ending in @demo.hms.
--- Re-runnable: the whole block is skipped when demo patients already exist.
--- It is built with the real stored procedures, so it proves the full cycle works.
+-- Re-runnable realistic demo data: patient, room, admission, clinical, billing, and payment examples.
+SET NOCOUNT ON;
 SET ANSI_NULLS ON;
 SET ANSI_PADDING ON;
 SET ANSI_WARNINGS ON;
@@ -46,137 +45,33 @@ JOIN @LegacyPatients s
   ON p.Email = N'patient' + RIGHT(N'000' + CONVERT(NVARCHAR(3), s.SeedNo), 3) + N'@example.test'
   OR p.Email = LOWER(s.FirstName + N'.' + s.LastName + RIGHT(N'000' + CONVERT(NVARCHAR(3), s.SeedNo), 3) + N'@example.test');
 
--- Ensure the lookup, room, and service records required by the demo admissions exist.
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = N'GEN' AND IsDeleted = 0)
-    INSERT INTO dbo.tblRoomTypes (Code, Name, Status) VALUES (N'GEN', N'General Ward', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = N'ICU' AND IsDeleted = 0)
-    INSERT INTO dbo.tblRoomTypes (Code, Name, Status) VALUES (N'ICU', N'Intensive Care', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = N'PRV' AND IsDeleted = 0)
-    INSERT INTO dbo.tblRoomTypes (Code, Name, Status) VALUES (N'PRV', N'Private Room', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRoomTypes WHERE Code = N'SEMI' AND IsDeleted = 0)
-    INSERT INTO dbo.tblRoomTypes (Code, Name, Status) VALUES (N'SEMI', N'Semi-private Room', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = N'EMR' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status) VALUES (N'EMR', N'Emergency', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = N'MED' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status) VALUES (N'MED', N'Internal Medicine', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = N'PED' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status) VALUES (N'PED', N'Pediatrics', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = N'SURG' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status) VALUES (N'SURG', N'Surgery', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = N'OBG' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDepartmentTypes (Code, Name, Status) VALUES (N'OBG', N'Obstetrics and Gynecology', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'A00' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'A00', N'Cholera', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'J18' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'J18', N'Pneumonia, unspecified', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'I10' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'I10', N'Essential hypertension', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'K35' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'K35', N'Acute appendicitis', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'E11' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'E11', N'Type 2 diabetes mellitus', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'S72' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'S72', N'Fracture of femur', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDiagnosisCodes WHERE Code = N'O80' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDiagnosisCodes (Code, Description, Status) VALUES (N'O80', N'Normal delivery', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = N'ANTIB' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDrugCategories (Code, Name, Status) VALUES (N'ANTIB', N'Antibiotics', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = N'CARDIO' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDrugCategories (Code, Name, Status) VALUES (N'CARDIO', N'Cardiovascular', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = N'ANTID' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDrugCategories (Code, Name, Status) VALUES (N'ANTID', N'Antidiabetics', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = N'VITAM' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDrugCategories (Code, Name, Status) VALUES (N'VITAM', N'Vitamins and supplements', N'Active');
-IF NOT EXISTS (SELECT 1 FROM dbo.tblDrugCategories WHERE Code = N'IVFLU' AND IsDeleted = 0)
-    INSERT INTO dbo.tblDrugCategories (Code, Name, Status) VALUES (N'IVFLU', N'IV fluids', N'Active');
+INSERT INTO dbo.tblPatients (FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email)
+SELECT s.FirstName, s.LastName, s.DateOfBirth, s.Gender, s.ContactNumber, s.Address, s.Email
+FROM (VALUES
+    (N'Maria', N'Santos', CONVERT(date, '19850312'), N'Female', N'0917-100-0001', N'12 Rizal St, Quezon City', N'maria.santos@demo.hms'),
+    (N'Juan', N'Dela Cruz', CONVERT(date, '19721102'), N'Male', N'0917-100-0002', N'45 Mabini Ave, Manila', N'juan.delacruz@demo.hms'),
+    (N'Ana', N'Reyes', CONVERT(date, '19900725'), N'Female', N'0917-100-0003', N'8 Bonifacio St, Pasig', N'ana.reyes@demo.hms'),
+    (N'Pedro', N'Garcia', CONVERT(date, '19640130'), N'Male', N'0917-100-0004', N'23 Luna St, Makati', N'pedro.garcia@demo.hms'),
+    (N'Liza', N'Mendoza', CONVERT(date, '20010909'), N'Female', N'0917-100-0005', N'77 Aguinaldo Hwy, Cavite', N'liza.mendoza@demo.hms'),
+    (N'Carlo', N'Ramos', CONVERT(date, '19780518'), N'Male', N'0917-100-0006', N'5 Katipunan Ave, Quezon City', N'carlo.ramos@demo.hms'),
+    (N'Grace', N'Villanueva', CONVERT(date, '19551221'), N'Female', N'0917-100-0007', N'91 Taft Ave, Manila', N'grace.villanueva@demo.hms'),
+    (N'Mark', N'Torres', CONVERT(date, '19950404'), N'Male', N'0917-100-0008', N'14 Ortigas Ave, Pasig', N'mark.torres@demo.hms'),
+    (N'Joy', N'Aquino', CONVERT(date, '20150816'), N'Female', N'0917-100-0009', N'3 Commonwealth Ave, QC', N'joy.aquino@demo.hms'),
+    (N'Ramon', N'Bautista', CONVERT(date, '19490227'), N'Male', N'0917-100-0010', N'60 Espana Blvd, Manila', N'ramon.bautista@demo.hms'),
+    (N'Noel', N'Villareal', CONVERT(date, '19830209'), N'Male', N'0917-100-0016', N'18 P. Tuazon St, Quezon City', N'noel.villareal@demo.hms'),
+    (N'Rosa', N'Dizon', CONVERT(date, '19761127'), N'Female', N'0917-100-0017', N'6 Pedro Gil St, Manila', N'rosa.dizon@demo.hms'),
+    (N'Paolo', N'Gonzales', CONVERT(date, '19990413'), N'Male', N'0917-100-0018', N'55 J.P. Rizal, Makati', N'paolo.gonzales@demo.hms'),
+    (N'Teresa', N'Chua', CONVERT(date, '19580530'), N'Female', N'0917-100-0019', N'27 Wilson St, San Juan', N'teresa.chua@demo.hms'),
+    (N'Francis', N'Lim', CONVERT(date, '20031102'), N'Male', N'0917-100-0020', N'14 Congressional Ave, Quezon City', N'francis.lim@demo.hms'),
+    (N'Elena', N'Navarro', CONVERT(date, '19880614'), N'Female', N'0917-100-0021', N'16 Aurora Blvd, Quezon City', N'elena.navarro@demo.hms'),
+    (N'Luis', N'Fernandez', CONVERT(date, '19750923'), N'Male', N'0917-100-0022', N'22 Taft Avenue, Manila', N'luis.fernandez@demo.hms'),
+    (N'Bea', N'Castillo', CONVERT(date, '20080219'), N'Female', N'0917-100-0023', N'9 Shaw Boulevard, Mandaluyong', N'bea.castillo@demo.hms'),
+    (N'Andres', N'Ramos', CONVERT(date, '19681205'), N'Male', N'0917-100-0024', N'31 EDSA, Makati', N'andres.ramos@demo.hms'),
+    (N'Camille', N'Flores', CONVERT(date, '19930811'), N'Female', N'0917-100-0025', N'4 Ortigas Avenue, Pasig', N'camille.flores@demo.hms')
+) s(FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.tblPatients p WHERE p.Email = s.Email);
 
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'301')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'301', N'PRV', 3000);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'302')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'302', N'PRV', 3000);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'303')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'303', N'PRV', 3200);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'304')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'304', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'305')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'305', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'306')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'306', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'307')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'307', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'ICU-A')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'ICU-A', N'ICU', 6000);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'ICU-B')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'ICU-B', N'ICU', 6000);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'101')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'101', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'102')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'102', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'103')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'103', N'GEN', 800);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'201')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'201', N'SEMI', 1500);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = N'202')
-    INSERT INTO dbo.tblRooms (RoomNo, RoomType, Rate) VALUES (N'202', N'SEMI', 1500);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'CONS-SPEC' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'CONS-SPEC', N'Specialist consultation', N'Consultation', NULL, 1200);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'LAB-CBC' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'LAB-CBC', N'Complete blood count', N'Laboratory', NULL, 350);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'MED-PARA' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'MED-PARA', N'Paracetamol 500 mg tablet', N'Medication', N'ANALG', 5);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'PRC-APP' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'PRC-APP', N'Appendectomy', N'Procedure', NULL, 35000);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'IMG-US' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'IMG-US', N'Ultrasound', N'Imaging', NULL, 1200);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'LAB-URI' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'LAB-URI', N'Urinalysis', N'Laboratory', NULL, 150);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'LAB-GLU' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'LAB-GLU', N'Blood glucose', N'Laboratory', NULL, 120);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'IMG-XRAY' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'IMG-XRAY', N'Chest X-ray', N'Imaging', NULL, 600);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'PRC-SUT' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'PRC-SUT', N'Wound suturing', N'Procedure', NULL, 1500);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'MED-AMOX' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'MED-AMOX', N'Amoxicillin 500 mg capsule', N'Medication', N'ANTIB', 15);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'MED-IVF' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'MED-IVF', N'IV fluid 1 L', N'Medication', N'IVFLU', 120);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'SUP-GLOVE' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'SUP-GLOVE', N'Examination gloves (pair)', N'Supply', NULL, 20);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'SUP-DRSG' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'SUP-DRSG', N'Wound dressing set', N'Supply', NULL, 250);
-IF NOT EXISTS (SELECT 1 FROM dbo.tblServices WHERE Code = N'OTH-ERF' AND IsActive = 1)
-    INSERT INTO dbo.tblServices (Code, Name, Category, DrugCategoryCode, UnitPrice)
-    VALUES (N'OTH-ERF', N'Emergency room fee', N'Other', NULL, 1000);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.tblPatients WHERE Email LIKE N'%@demo.hms')
 BEGIN
-    INSERT INTO dbo.tblPatients (FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email) VALUES
-    (N'Maria',   N'Santos',    '1985-03-12', N'Female', N'0917-100-0001', N'12 Rizal St, Quezon City',      N'maria.santos@demo.hms'),
-    (N'Juan',    N'Dela Cruz', '1972-11-02', N'Male',   N'0917-100-0002', N'45 Mabini Ave, Manila',         N'juan.delacruz@demo.hms'),
-    (N'Ana',     N'Reyes',     '1990-07-25', N'Female', N'0917-100-0003', N'8 Bonifacio St, Pasig',         N'ana.reyes@demo.hms'),
-    (N'Pedro',   N'Garcia',    '1964-01-30', N'Male',   N'0917-100-0004', N'23 Luna St, Makati',            N'pedro.garcia@demo.hms'),
-    (N'Liza',    N'Mendoza',   '2001-09-09', N'Female', N'0917-100-0005', N'77 Aguinaldo Hwy, Cavite',      N'liza.mendoza@demo.hms'),
-    (N'Carlo',   N'Ramos',     '1978-05-18', N'Male',   N'0917-100-0006', N'5 Katipunan Ave, Quezon City',  N'carlo.ramos@demo.hms'),
-    (N'Grace',   N'Villanueva','1955-12-21', N'Female', N'0917-100-0007', N'91 Taft Ave, Manila',           N'grace.villanueva@demo.hms'),
-    (N'Mark',    N'Torres',    '1995-04-04', N'Male',   N'0917-100-0008', N'14 Ortigas Ave, Pasig',         N'mark.torres@demo.hms'),
-    (N'Joy',     N'Aquino',    '2015-08-16', N'Female', N'0917-100-0009', N'3 Commonwealth Ave, QC',        N'joy.aquino@demo.hms'),
-    (N'Ramon',   N'Bautista',  '1949-02-27', N'Male',   N'0917-100-0010', N'60 Espana Blvd, Manila',        N'ramon.bautista@demo.hms');
-
     DECLARE @Maria INT = (SELECT PatientID FROM dbo.tblPatients WHERE Email = N'maria.santos@demo.hms');
     DECLARE @Juan  INT = (SELECT PatientID FROM dbo.tblPatients WHERE Email = N'juan.delacruz@demo.hms');
     DECLARE @Ana   INT = (SELECT PatientID FROM dbo.tblPatients WHERE Email = N'ana.reyes@demo.hms');
@@ -186,12 +81,17 @@ BEGIN
     DECLARE @ids TABLE (Id INT);
 
     -- 1) Maria: admitted only (room 101)
+    IF NOT EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @Maria AND CreatedBy = N'demo seed')
+    BEGIN
     SET @when = DATEADD(HOUR, -20, SYSUTCDATETIME());
     DELETE FROM @ids; INSERT INTO @ids EXEC dbo.usp_tblAdmissions_Admit
         @PatientID = @Maria, @RoomNo = N'101', @DepartmentCode = N'MED', @DiagnosisCode = N'J18',
         @AttendingPhysician = N'Dr. Cruz', @Reason = N'Fever and cough for 4 days', @AdmitDate = @when, @CreatedBy = N'demo seed';
+    END
 
     -- 2) Juan: admitted, charges added, bill generated but unpaid (room 102)
+    IF NOT EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @Juan AND CreatedBy = N'demo seed')
+    BEGIN
     SET @when = DATEADD(DAY, -2, SYSUTCDATETIME());
     DELETE FROM @ids; INSERT INTO @ids EXEC dbo.usp_tblAdmissions_Admit
         @PatientID = @Juan, @RoomNo = N'102', @DepartmentCode = N'MED', @DiagnosisCode = N'I10',
@@ -204,8 +104,11 @@ BEGIN
     SELECT @svc = ServiceID FROM dbo.tblServices WHERE Code = N'MED-PARA' AND IsActive = 1;
     EXEC dbo.usp_tblAdmissionCharges_Add @AdmissionID = @adm, @ServiceID = @svc, @Quantity = 12, @ChargedBy = N'demo seed';
     DELETE FROM @ids; INSERT INTO @ids EXEC dbo.usp_tblBills_Generate @AdmissionID = @adm, @GeneratedBy = N'demo seed';
+    END
 
     -- 3) Ana: full cycle, admitted, charged, billed, paid in two payments and discharged (room 201)
+    IF NOT EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @Ana AND CreatedBy = N'demo seed')
+    BEGIN
     SET @when = DATEADD(DAY, -3, SYSUTCDATETIME());
     DELETE FROM @ids; INSERT INTO @ids EXEC dbo.usp_tblAdmissions_Admit
         @PatientID = @Ana, @RoomNo = N'201', @DepartmentCode = N'SURG', @DiagnosisCode = N'K35',
@@ -221,8 +124,10 @@ BEGIN
     DECLARE @rest DECIMAL(12,2) = (SELECT Balance FROM dbo.tblBills WHERE BillID = @bill);
     EXEC dbo.usp_tblPayments_Post @BillID = @bill, @Amount = @rest, @Method = N'Card', @ReferenceNo = N'DEMO-CARD-0001', @ReceivedBy = N'demo seed';
     EXEC dbo.usp_tblAdmissions_Discharge @AdmissionID = @adm, @DischargeSummary = N'Recovered well after surgery. Follow-up in two weeks.', @DischargedBy = N'demo seed';
-END
+    END
 
+INSERT INTO dbo.tblPatients (FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email)
+SELECT s.FirstName, s.LastName, s.DateOfBirth, s.Gender, s.ContactNumber, s.Address, s.Email
 -- Add admission, clinical charge, billing, and payment examples for the remaining demo patients.
 DECLARE @AdditionalCases TABLE
 (
@@ -245,7 +150,12 @@ VALUES
     (4, N'grace.villanueva@demo.hms', N'304', N'MED', N'J18', N'Dr. Daniel Santos', N'Respiratory observation', N'IMG-XRAY', N'MED-IVF'),
     (5, N'mark.torres@demo.hms', N'305', N'EMR', N'S72', N'Dr. Maya Cruz', N'Minor injury assessment', N'PRC-SUT', N'SUP-GLOVE'),
     (6, N'joy.aquino@demo.hms', N'306', N'PED', N'J18', N'Dr. Isabel Flores', N'Pediatric respiratory observation', N'LAB-CBC', N'MED-AMOX'),
-    (7, N'ramon.bautista@demo.hms', N'307', N'MED', N'E11', N'Dr. Marco Ramos', N'Routine glucose monitoring', N'LAB-GLU', N'CONS-SPEC');
+    (7, N'ramon.bautista@demo.hms', N'307', N'MED', N'E11', N'Dr. Marco Ramos', N'Routine glucose monitoring', N'LAB-GLU', N'CONS-SPEC'),
+    (8, N'elena.navarro@demo.hms', N'201', N'OBG', N'O80', N'Dr. Patricia Lim', N'Post-delivery monitoring', N'LAB-CBC', N'CONS-SPEC'),
+    (9, N'luis.fernandez@demo.hms', N'201', N'CAR', N'I10', N'Dr. Roberto Tan', N'Cardiac observation', N'LAB-CBC', N'IMG-XRAY'),
+    (10, N'bea.castillo@demo.hms', N'104', N'PED', N'J45', N'Dr. Isabel Flores', N'Asthma observation', N'LAB-CBC', N'MED-AMOX'),
+    (11, N'andres.ramos@demo.hms', N'105', N'ORT', N'M54', N'Dr. Marco Ramos', N'Back pain assessment', N'IMG-XRAY', N'CONS-SPEC'),
+    (12, N'camille.flores@demo.hms', N'106', N'MED', N'N39', N'Dr. Elena Garcia', N'Urinary infection treatment', N'LAB-URI', N'MED-AMOX');
 
 DECLARE @MorePatientID INT;
 DECLARE @MoreRoomNo NVARCHAR(20);
@@ -272,7 +182,10 @@ FETCH NEXT FROM more_admission_cursor INTO @MoreCaseNo, @MorePatientID, @MoreRoo
 WHILE @@FETCH_STATUS = 0
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @MorePatientID AND CreatedBy = N'demo seed')
-       AND EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = @MoreRoomNo AND Status = N'Available' AND IsActive = 1)
+       AND EXISTS (SELECT 1 FROM dbo.tblRooms r WHERE r.RoomNo = @MoreRoomNo AND r.IsActive = 1
+                   AND r.Status NOT IN (N'Maintenance', N'Reserved')
+                   AND (SELECT COUNT(*) FROM dbo.tblRoomAssignments a
+                        WHERE a.RoomNo = r.RoomNo AND a.DischargeDate IS NULL) < r.Capacity)
     BEGIN
         DELETE FROM @MoreIDs;
         SET @MoreAdmitDate = DATEADD(DAY, -(@MoreCaseNo + 1), SYSUTCDATETIME());

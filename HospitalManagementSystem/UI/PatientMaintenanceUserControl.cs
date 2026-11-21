@@ -18,7 +18,9 @@ namespace UI
         public PatientMaintenanceUserControl()
         {
             InitializeComponent();
+            UITheme.Apply(this);
             txtSearch.TextChanged += TxtSearch_TextChanged;
+            txtPatientID.ReadOnly = true;
         }
 
         private void PatientMaintenanceUserControl_Load(object sender, EventArgs e)
@@ -109,23 +111,97 @@ namespace UI
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            // Implementation for Adding Patient
+            if (!TryBuildPatient(out var patient)) return;
+
+            try
+            {
+                _patientService ??= new PatientService(Config.GetConnectionString());
+                var patientId = _patientService.Create(patient);
+                if (patientId <= 0)
+                {
+                    MessageBox.Show(this, "The patient record was not created. Please try again.", "Patient not saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                RefreshPatientTable();
+                ClearPatientForm();
+                MessageBox.Show(this, $"Patient record created. Patient ID: {patientId}.", "Patient saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                UIHelper.HandleDatabaseError(ex, "adding patient");
+            }
         }
 
         private void btnUpdate_Click(object sender, EventArgs e)
         {
-            // Implementation for Updating Patient Record
+            if (!int.TryParse(txtPatientID.Text, out var patientId))
+            {
+                MessageBox.Show(this, "Select a patient record to update.", "Patient required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!TryBuildPatient(out var patient)) return;
+            patient.PatientID = patientId;
+
+            try
+            {
+                _patientService ??= new PatientService(Config.GetConnectionString());
+                if (_patientService.Update(patient) == 0)
+                {
+                    MessageBox.Show(this, "The patient record could not be found or was not updated.", "No changes saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    RefreshPatientTable();
+                    return;
+                }
+
+                RefreshPatientTable();
+                ClearPatientForm();
+                MessageBox.Show(this, "Patient record updated.", "Patient saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                UIHelper.HandleDatabaseError(ex, "updating patient");
+            }
         }
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            // Implementation for Deleting Patient Record
-            // Rule: Delete allowed only if patient has no active admission or related records
+            if (!int.TryParse(txtPatientID.Text, out var patientId))
+            {
+                MessageBox.Show(this, "Select a patient record to deactivate.", "Patient required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show(this, "Deactivate this patient record? Historical records will be retained.",
+                    "Confirm patient deactivation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
+            try
+            {
+                _patientService ??= new PatientService(Config.GetConnectionString());
+                if (_patientService.Delete(patientId) == 0)
+                {
+                    MessageBox.Show(this, "The patient record could not be found or was not deactivated.", "No changes made", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    RefreshPatientTable();
+                    return;
+                }
+
+                RefreshPatientTable();
+                ClearPatientForm();
+                MessageBox.Show(this, "Patient record deactivated.", "Patient updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                UIHelper.HandleDatabaseError(ex, "deactivating patient");
+            }
         }
 
         private void btnClear_Click(object sender, EventArgs e)
         {
-            // Clear input fields
+            ClearPatientForm();
+        }
+
+        private void ClearPatientForm()
+        {
             txtPatientID.Clear();
             txtFirstName.Clear();
             txtLastName.Clear();
@@ -134,6 +210,27 @@ namespace UI
             txtAddress.Clear();
             txtContactNo.Clear();
             lblAdmissionStatusVal.Text = "Not Admitted";
+        }
+
+        private bool TryBuildPatient(out Model.Patient patient)
+        {
+            patient = new Model.Patient();
+            if (string.IsNullOrWhiteSpace(txtFirstName.Text) || string.IsNullOrWhiteSpace(txtLastName.Text))
+            {
+                MessageBox.Show(this, "Enter both the patient's first and last name.", "Name required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            patient = new Model.Patient
+            {
+                FirstName = txtFirstName.Text.Trim(),
+                LastName = txtLastName.Text.Trim(),
+                DateOfBirth = DateTime.Today.AddYears(-(int)numAge.Value),
+                Gender = cmbGender.SelectedItem?.ToString(),
+                Address = txtAddress.Text.Trim(),
+                ContactNumber = txtContactNo.Text.Trim()
+            };
+            return true;
         }
 
         private void dgvPatients_SelectionChanged(object sender, EventArgs e)

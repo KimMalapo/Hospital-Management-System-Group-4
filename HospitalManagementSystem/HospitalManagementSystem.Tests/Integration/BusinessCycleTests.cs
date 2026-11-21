@@ -21,6 +21,54 @@ public class BusinessCycleTests : IDisposable
         CurrentUser.Clear();
     }
 
+    [SkippableFact]
+    public void Room_capacity_allows_multiple_admissions_and_rejects_overflow()
+    {
+        Skip.IfNot(_db.LocalDbAvailable, _db.SkipReason);
+        Assert.True(_db.ScriptErrors.Count == 0, "Fix the script errors first: " + string.Join("; ", _db.ScriptErrors));
+
+        var cs = _db.ConnectionString;
+        var patients = new PatientService(cs);
+        var rooms = new RoomService(cs);
+        var admissions = new AdmissionService(cs);
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var roomNo = "CAP-" + suffix;
+
+        var patientIds = Enumerable.Range(1, 3).Select(i => patients.Create(new Patient
+        {
+            FirstName = "Capacity" + i,
+            LastName = "Test" + suffix,
+            DateOfBirth = new DateTime(1980 + i, 1, 1),
+            Gender = "Other"
+        })).ToArray();
+        rooms.Create(roomNo, "GEN", 800m, capacity: 2);
+
+        admissions.Admit(patientIds[0], roomNo, "EMR", "A00", "Dr. Test", "Capacity check");
+        admissions.Admit(patientIds[1], roomNo, "EMR", "A00", "Dr. Test", "Capacity check");
+
+        var room = rooms.GetById(roomNo).Rows[0];
+        Assert.Equal(2, Convert.ToInt32(room["OccupiedBeds"]));
+        Assert.Equal(2, Convert.ToInt32(room["Capacity"]));
+        Assert.Equal("Occupied", Convert.ToString(room["Status"]));
+        Assert.Throws<ValidationException>(() =>
+            admissions.Admit(patientIds[2], roomNo, "EMR", "A00", "Dr. Test", "Over capacity"));
+
+        var assignmentId = Scalar(
+            "SELECT MIN(AssignmentID) FROM dbo.tblRoomAssignments WHERE RoomNo = @RoomNo AND DischargeDate IS NULL",
+            new SqlParameter("@RoomNo", roomNo));
+        using (var connection = new SqlConnection(cs))
+        {
+            connection.Open();
+            using var command = new SqlCommand("EXEC dbo.usp_tblRoomAssignments_Discharge @AssignmentID", connection);
+            command.Parameters.AddWithValue("@AssignmentID", assignmentId);
+            command.ExecuteNonQuery();
+        }
+
+        room = rooms.GetById(roomNo).Rows[0];
+        Assert.Equal(1, Convert.ToInt32(room["OccupiedBeds"]));
+        Assert.Equal("Available", Convert.ToString(room["Status"]));
+    }
+
     public void Dispose() => CurrentUser.Clear();
 
     [SkippableFact]

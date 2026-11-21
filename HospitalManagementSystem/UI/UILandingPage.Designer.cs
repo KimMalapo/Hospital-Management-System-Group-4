@@ -42,6 +42,9 @@
             btnHome = new Button();
             btnRoom = new Button();
             btnMasterData = new Button();
+            btnAdmission = new Button();
+            btnActiveAdmissions = new Button();
+            btnBilling = new Button();
             label5 = new Label();
             label6 = new Label();
             btnPatientMaintenance = new Button();
@@ -168,7 +171,7 @@
             // btnRoom
             // 
             btnRoom.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnRoom.Location = new Point(33, 537);
+            btnRoom.Location = new Point(33, 548);
             btnRoom.Name = "btnRoom";
             btnRoom.Size = new Size(352, 55);
             btnRoom.TabIndex = 7;
@@ -179,7 +182,7 @@
             // btnMasterData
             // 
             btnMasterData.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnMasterData.Location = new Point(33, 627);
+            btnMasterData.Location = new Point(33, 615);
             btnMasterData.Name = "btnMasterData";
             btnMasterData.Size = new Size(352, 55);
             btnMasterData.TabIndex = 8;
@@ -191,7 +194,7 @@
             // 
             label5.AutoSize = true;
             label5.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label5.Location = new Point(87, 728);
+            label5.Location = new Point(87, 700);
             label5.Name = "label5";
             label5.Size = new Size(248, 31);
             label5.TabIndex = 9;
@@ -202,7 +205,7 @@
             label6.AutoSize = true;
             label6.Font = new Font("Yu Gothic Medium", 15F, FontStyle.Bold);
             label6.ForeColor = Color.DimGray;
-            label6.Location = new Point(33, 813);
+            label6.Location = new Point(33, 770);
             label6.Name = "label6";
             label6.Size = new Size(108, 26);
             label6.TabIndex = 10;
@@ -211,7 +214,7 @@
             // btnPatientMaintenance
             // 
             btnPatientMaintenance.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnPatientMaintenance.Location = new Point(33, 429);
+            btnPatientMaintenance.Location = new Point(33, 280);
             btnPatientMaintenance.Name = "btnPatientMaintenance";
             btnPatientMaintenance.Size = new Size(352, 55);
             btnPatientMaintenance.TabIndex = 11;
@@ -222,13 +225,46 @@
             // btnSearch
             // 
             btnSearch.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnSearch.Location = new Point(33, 324);
+            btnSearch.Location = new Point(33, 548);
             btnSearch.Name = "btnSearch";
             btnSearch.Size = new Size(352, 55);
             btnSearch.TabIndex = 12;
             btnSearch.Text = "Search";
             btnSearch.UseVisualStyleBackColor = true;
             btnSearch.Click += btnSearch_Click;
+            // 
+            // btnBilling
+            // 
+            btnBilling.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnBilling.Location = new Point(33, 481);
+            btnBilling.Name = "btnBilling";
+            btnBilling.Size = new Size(352, 55);
+            btnBilling.TabIndex = 15;
+            btnBilling.Text = "Billing";
+            btnBilling.UseVisualStyleBackColor = true;
+            btnBilling.Click += btnBilling_Click;
+            // 
+            // btnAdmission
+            // 
+            btnAdmission.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnAdmission.Location = new Point(33, 347);
+            btnAdmission.Name = "btnAdmission";
+            btnAdmission.Size = new Size(352, 55);
+            btnAdmission.TabIndex = 13;
+            btnAdmission.Text = "Admit Patient";
+            btnAdmission.UseVisualStyleBackColor = true;
+            btnAdmission.Click += btnAdmission_Click;
+            // 
+            // btnActiveAdmissions
+            // 
+            btnActiveAdmissions.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnActiveAdmissions.Location = new Point(33, 414);
+            btnActiveAdmissions.Name = "btnActiveAdmissions";
+            btnActiveAdmissions.Size = new Size(352, 55);
+            btnActiveAdmissions.TabIndex = 14;
+            btnActiveAdmissions.Text = "Active Admissions";
+            btnActiveAdmissions.UseVisualStyleBackColor = true;
+            btnActiveAdmissions.Click += btnActiveAdmissions_Click;
             // 
             // UILandingPage
             // 
@@ -237,6 +273,9 @@
             BackColor = SystemColors.Window;
             ClientSize = new Size(1920, 1080);
             Controls.Add(btnSearch);
+            Controls.Add(btnBilling);
+            Controls.Add(btnActiveAdmissions);
+            Controls.Add(btnAdmission);
             Controls.Add(btnPatientMaintenance);
             Controls.Add(btnLogout);
             Controls.Add(label6);
@@ -282,5 +321,8 @@
         private Button btnRooms;
         private Button btnPatientMaintenance;
         private Button btnSearch;
+        private Button btnAdmission;
+        private Button btnActiveAdmissions;
+        private Button btnBilling;
     }
 }

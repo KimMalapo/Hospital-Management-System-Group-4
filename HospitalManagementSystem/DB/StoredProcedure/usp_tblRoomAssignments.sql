@@ -20,18 +20,31 @@ BEGIN
             RETURN;
         END
 
-        -- Validate room is available
-        IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = @RoomNo AND IsActive = 1 AND Status = N'Available')
+        IF EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @PatientID AND Status = N'Admitted')
         BEGIN
-            RAISERROR(N'Room ''%s'' is not available.', 16, 1, @RoomNo);
-            RETURN;
+            RAISERROR(N'This patient is already admitted.', 16, 1);
         END
 
-        -- Guard: no open assignment already exists (unique index also enforces this)
-        IF EXISTS (SELECT 1 FROM dbo.tblRoomAssignments WHERE RoomNo = @RoomNo AND DischargeDate IS NULL)
+        IF EXISTS (SELECT 1 FROM dbo.tblRoomAssignments WHERE PatientID = @PatientID AND DischargeDate IS NULL)
+            RAISERROR(N'This patient already has an active room assignment.', 16, 1);
+
+        -- Lock the room row before counting assignments to serialize capacity checks.
+        DECLARE @Capacity INT, @RoomStatus NVARCHAR(30);
+        SELECT @Capacity = Capacity, @RoomStatus = Status
+        FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK)
+        WHERE RoomNo = @RoomNo AND IsActive = 1;
+
+        IF @Capacity IS NULL OR @RoomStatus IN (N'Maintenance', N'Reserved')
         BEGIN
-            RAISERROR(N'Room ''%s'' already has an open assignment.', 16, 1, @RoomNo);
-            RETURN;
+            RAISERROR(N'The room is not available.', 16, 1);
+        END
+
+        DECLARE @Occupied INT =
+            (SELECT COUNT(*) FROM dbo.tblRoomAssignments WITH (UPDLOCK, HOLDLOCK)
+             WHERE RoomNo = @RoomNo AND DischargeDate IS NULL);
+        IF @Occupied >= @Capacity
+        BEGIN
+            RAISERROR(N'The room is at full capacity.', 16, 1);
         END
 
         DECLARE @Admit DATETIME2(0) = ISNULL(@AdmitDate, SYSUTCDATETIME());
@@ -39,9 +52,9 @@ BEGIN
         INSERT INTO dbo.tblRoomAssignments (PatientID, RoomNo, AdmitDate, Notes, CreatedBy)
         VALUES (@PatientID, @RoomNo, @Admit, @Notes, @CreatedBy);
 
-        -- Mark room occupied
+        -- Occupied means every bed is currently assigned; otherwise the room remains available.
         UPDATE dbo.tblRooms
-        SET    Status    = N'Occupied',
+        SET    Status    = CASE WHEN @Occupied + 1 >= Capacity THEN N'Occupied' ELSE N'Available' END,
                UpdatedAt = SYSUTCDATETIME()
         WHERE  RoomNo = @RoomNo;
 
@@ -92,6 +105,11 @@ BEGIN
             RETURN;
         END
 
+        -- Serialize recalculation with admissions to the same room.
+        SELECT @TargetRoom = RoomNo
+        FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK)
+        WHERE RoomNo = @TargetRoom;
+
         DECLARE @Discharge DATETIME2(0) = ISNULL(@DischargeDate, SYSUTCDATETIME());
 
         UPDATE dbo.tblRoomAssignments
@@ -100,11 +118,13 @@ BEGIN
 
         DECLARE @Affected INT = @@ROWCOUNT;
 
-        -- Free the room
+        -- Recalculate room status after closing this patient's assignment.
         UPDATE dbo.tblRooms
-        SET    Status    = N'Available',
+        SET    Status    = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
+                                      WHERE RoomNo = @TargetRoom AND DischargeDate IS NULL) >= Capacity
+                                THEN N'Occupied' ELSE N'Available' END,
                UpdatedAt = SYSUTCDATETIME()
-        WHERE  RoomNo = @TargetRoom;
+        WHERE  RoomNo = @TargetRoom AND Status IN (N'Available', N'Occupied');
 
         COMMIT TRAN;
 

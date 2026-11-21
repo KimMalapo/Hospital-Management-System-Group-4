@@ -14,7 +14,20 @@ namespace UI
             if (host.Controls.Count == 1 && host.Controls[0] is T)
                 return;
 
-            var view = new T { Dock = DockStyle.Fill };
+            ShowView(host, new T());
+        }
+
+        public static void ShowView(Panel host, UserControl view)
+        {
+            ArgumentNullException.ThrowIfNull(host);
+            ArgumentNullException.ThrowIfNull(view);
+
+            if (host.Controls.Count == 1 && host.Controls[0].GetType() == view.GetType())
+            {
+                view.Dispose();
+                return;
+            }
+
             host.SuspendLayout();
             try
             {
@@ -25,11 +38,13 @@ namespace UI
                     currentView.Dispose();
                 }
 
+                view.Dock = DockStyle.Fill;
                 host.Controls.Add(view);
             }
             catch
             {
-                view.Dispose();
+                if (!view.IsDisposed)
+                    view.Dispose();
                 throw;
             }
             finally

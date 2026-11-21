@@ -8,6 +8,11 @@ namespace UI
         public HomeUserControl()
         {
             InitializeComponent();
+            UITheme.Apply(this);
+            panel3.BackColor = Color.White;
+            panel4.BackColor = Color.White;
+            panel5.BackColor = Color.White;
+            panel6.BackColor = Color.White;
         }
 
         private void btnRums_Click(object sender, EventArgs e)

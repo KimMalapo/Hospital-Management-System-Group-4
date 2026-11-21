@@ -34,6 +34,7 @@ namespace BusinessLogic
 
         public int Create(Patient p)
         {
+            PatientValidator.Validate(p);
             try
             {
                 var result = _db.ExecuteScalarSP("usp_tblPatients_Create",
@@ -53,14 +54,10 @@ namespace BusinessLogic
             }
         }
 
-        // Old name the UI is calling
-        public int CreatePatient(string insertSql, params SqlParameter[] parameters)
+        public int Update(Patient p)
         {
-            return _db.Execute(insertSql, parameters);
-        }
-
-        public int Update(Patient p) =>
-            _db.ExecuteSP("usp_tblPatients_Update",
+            PatientValidator.Validate(p);
+            var result = _db.QuerySP("usp_tblPatients_Update",
                 new SqlParameter("@PatientID", p.PatientID),
                 new SqlParameter("@FirstName", p.FirstName ?? (object)DBNull.Value),
                 new SqlParameter("@LastName", p.LastName ?? (object)DBNull.Value),
@@ -70,9 +67,16 @@ namespace BusinessLogic
                 new SqlParameter("@Address", p.Address ?? (object)DBNull.Value),
                 new SqlParameter("@Email", p.Email ?? (object)DBNull.Value));
 
-        public int Delete(int id) =>
-            _db.ExecuteSP("usp_tblPatients_Delete",
+            return result.Rows.Count > 0 ? Convert.ToInt32(result.Rows[0]["AffectedRows"]) : 0;
+        }
+
+        public int Delete(int id)
+        {
+            var result = _db.QuerySP("usp_tblPatients_Delete",
                 new SqlParameter("@PatientID", id));
+
+            return result.Rows.Count > 0 ? Convert.ToInt32(result.Rows[0]["AffectedRows"]) : 0;
+        }
 
         private static Patient Map(DataRow row) => new Patient
         {

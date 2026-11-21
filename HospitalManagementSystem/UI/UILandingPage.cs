@@ -8,6 +8,7 @@ namespace UI
         public UILandingPage()
         {
             InitializeComponent();
+            UITheme.Apply(this);
         }
 
         private void btnLogout_Click(object sender, EventArgs e)
@@ -19,6 +20,23 @@ namespace UI
         private void btnHome_Click(object sender, EventArgs e)
         {
             UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+        }
+
+        private void btnAdmission_Click(object sender, EventArgs e)
+        {
+            var view = new AdmissionUserControl();
+            view.AdmissionCreated += AdmissionUserControl_AdmissionCreated;
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void btnActiveAdmissions_Click(object sender, EventArgs e)
+        {
+            ShowActiveAdmissions();
+        }
+
+        private void btnBilling_Click(object sender, EventArgs e)
+        {
+            UIHelper.ShowView(pnlUCHandler, new BillingUserControl());
         }
 
         private void UILandingPage_Load(object sender, EventArgs e)
@@ -59,6 +77,38 @@ namespace UI
         private void btnRoom_Click(object sender, EventArgs e)
         {
             UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
+        }
+
+        private void AdmissionUserControl_AdmissionCreated(object? sender, AdmissionCreatedEventArgs e)
+        {
+            ShowActiveAdmissions();
+        }
+
+        private void ShowActiveAdmissions()
+        {
+            var view = new ActiveAdmissionsUserControl();
+            view.ActionRequested += ActiveAdmissionsUserControl_ActionRequested;
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void ActiveAdmissionsUserControl_ActionRequested(object? sender, ActiveAdmissionActionEventArgs e)
+        {
+            if (e.Action == ActiveAdmissionAction.ViewBill)
+            {
+                UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));
+                return;
+            }
+
+            var action = e.Action switch
+            {
+                ActiveAdmissionAction.AddCharges => "Add charges",
+                ActiveAdmissionAction.ViewBill => "View bill",
+                ActiveAdmissionAction.Discharge => "Discharge",
+                _ => "Continue"
+            };
+            MessageBox.Show(this,
+                $"{action} for admission {e.AdmissionNo} will be available when its workflow screen is implemented.",
+                "Workflow screen not available", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

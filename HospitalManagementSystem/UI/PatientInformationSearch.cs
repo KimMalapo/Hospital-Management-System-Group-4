@@ -13,6 +13,7 @@ namespace UI
         public PatientInformationSearch()
         {
             InitializeComponent();
+            UITheme.Apply(this);
             var cs = Config.GetConnectionString();
             if (!string.IsNullOrWhiteSpace(cs)) _service = new PatientService(cs);
             btnSearch.Click += BtnSearch_Click;
@@ -26,16 +27,20 @@ namespace UI
 
         private void BtnSearch_Click(object? sender, EventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(txtSearch.Text))
+            {
+                MessageBox.Show(this, "Enter a patient ID, name, or contact number to search.",
+                    "Search required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtSearch.Focus();
+                return;
+            }
+
             try
             {
                 var results = SearchPatients(txtSearch.Text.Trim());
                 if (results.Rows.Count == 0)
                 {
-                    lblPateintID.Text = string.Empty;
-                    lblName.Text = string.Empty;
-                    lblAge.Text = string.Empty;
-                    lblGender.Text = string.Empty;
-                    lblContact.Text = string.Empty;
+                    ClearPatientDetails();
                     MessageBox.Show("No matching patient was found.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -61,9 +66,19 @@ namespace UI
             catch (Exception ex)
             {
                 Logger.Error("PatientInformationSearch.SearchPatients failed", ex);
+                ClearPatientDetails();
                 MessageBox.Show("Unable to search patients. Check the database connection and try again.",
                     "Database error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ClearPatientDetails()
+        {
+            lblPateintID.Text = string.Empty;
+            lblName.Text = string.Empty;
+            lblAge.Text = string.Empty;
+            lblGender.Text = string.Empty;
+            lblContact.Text = string.Empty;
         }
     }
 }

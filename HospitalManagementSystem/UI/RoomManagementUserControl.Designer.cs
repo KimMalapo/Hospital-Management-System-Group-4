@@ -51,6 +51,7 @@
             colBedNo = new DataGridViewTextBoxColumn();
             colRate = new DataGridViewTextBoxColumn();
             colStatus = new DataGridViewTextBoxColumn();
+            colCapacity = new DataGridViewTextBoxColumn();
             btnAdd = new Button();
             btnUpdate = new Button();
             btnDelete = new Button();
@@ -153,7 +154,7 @@
             lblBedNo.Name = "lblBedNo";
             lblBedNo.Size = new Size(64, 20);
             lblBedNo.TabIndex = 4;
-            lblBedNo.Text = "Bed No:";
+            lblBedNo.Text = "Occupancy:";
             // 
             // txtBedNo
             // 
@@ -253,7 +254,7 @@
             dgvRooms.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvRooms.BackgroundColor = Color.White;
             dgvRooms.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvRooms.Columns.AddRange(new DataGridViewColumn[] { colRoomNo, colRoomType, colBedNo, colRate, colStatus });
+            dgvRooms.Columns.AddRange(new DataGridViewColumn[] { colRoomNo, colRoomType, colBedNo, colRate, colStatus, colCapacity });
             dgvRooms.Location = new Point(25, 80);
             dgvRooms.MultiSelect = false;
             dgvRooms.Name = "dgvRooms";
@@ -277,7 +278,7 @@
             // 
             // colBedNo
             // 
-            colBedNo.HeaderText = "Bed No.";
+            colBedNo.HeaderText = "Beds (occupied / total / free)";
             colBedNo.Name = "colBedNo";
             colBedNo.ReadOnly = true;
             // 
@@ -292,6 +293,12 @@
             colStatus.HeaderText = "Availability";
             colStatus.Name = "colStatus";
             colStatus.ReadOnly = true;
+            // 
+            // colCapacity
+            // 
+            colCapacity.Name = "colCapacity";
+            colCapacity.Visible = false;
+            colCapacity.ReadOnly = true;
             // 
             // btnAdd
             // 
@@ -373,6 +380,7 @@
         private DataGridViewTextBoxColumn colBedNo;
         private DataGridViewTextBoxColumn colRate;
         private DataGridViewTextBoxColumn colStatus;
+        private DataGridViewTextBoxColumn colCapacity;
         private Button btnAdd;
         private Button btnUpdate;
         private Button btnDelete;

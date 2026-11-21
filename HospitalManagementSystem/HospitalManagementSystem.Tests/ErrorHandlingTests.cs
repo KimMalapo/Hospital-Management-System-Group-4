@@ -124,4 +124,11 @@ public class ErrorHandlingTests
         Assert.Throws<ValidationException>(() => PatientValidator.Validate(
             new Patient { FirstName = "A", LastName = "B", ContactNumber = "abc" }));
     }
+
+    [Fact]
+    public void PatientValidator_rejects_birth_dates_older_than_supported_range()
+    {
+        Assert.Throws<ValidationException>(() => PatientValidator.Validate(
+            new Patient { FirstName = "Ana", LastName = "Reyes", DateOfBirth = DateTime.Today.AddYears(-151) }));
+    }
 }

@@ -35,7 +35,7 @@ public static class PatientValidator
         {
             if (p.DateOfBirth.Value.Date > DateTime.Today)
                 throw new ValidationException("Date of birth cannot be in the future.", "Date of birth");
-            if (p.DateOfBirth.Value.Year < 1900)
+            if (p.DateOfBirth.Value.Date < DateTime.Today.AddYears(-150))
                 throw new ValidationException("Date of birth is not valid.", "Date of birth");
         }
 

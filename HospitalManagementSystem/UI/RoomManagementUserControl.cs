@@ -7,9 +7,13 @@ namespace UI
 {
     public partial class RoomManagementUserControl : UserControl
     {
+        private readonly NumericUpDown _capacity = new();
+
         public RoomManagementUserControl()
         {
             InitializeComponent();
+            UITheme.Apply(this);
+            InitializeCapacityEditor();
         }
 
         private void RoomManagementUserControl_Load(object sender, EventArgs e)
@@ -17,7 +21,7 @@ namespace UI
             cmbAvailability.Items.Clear();
             cmbAvailability.Items.AddRange(new object[] { "Available", "Occupied", "Maintenance", "Reserved" });
             txtBedNo.ReadOnly = true;
-            txtBedNo.Text = "Not tracked";
+            txtBedNo.Text = "0 / 1 occupied, 1 free";
             txtSearch.TextChanged += txtSearch_TextChanged;
             LoadRoomTypes();
             LoadRoomData();
@@ -40,27 +44,33 @@ namespace UI
                 dgvRooms.Rows.Clear();
                 DataTable rooms = DbHelper.Query(
                     @"SELECT r.RoomNo, r.RoomType, COALESCE(rt.Name, r.RoomType) AS RoomTypeName,
-                             r.Rate, CASE WHEN EXISTS
-                             (SELECT 1 FROM dbo.tblRoomAssignments ra
-                              WHERE ra.RoomNo = r.RoomNo AND ra.DischargeDate IS NULL)
-                             THEN N'Occupied' ELSE r.Status END AS DisplayStatus
+                             r.Rate, r.Capacity,
+                             (SELECT COUNT(*) FROM dbo.tblRoomAssignments ra
+                              WHERE ra.RoomNo = r.RoomNo AND ra.DischargeDate IS NULL) AS OccupiedBeds,
+                             CASE WHEN r.Status IN (N'Maintenance', N'Reserved') THEN r.Status
+                                  WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments ra
+                                        WHERE ra.RoomNo = r.RoomNo AND ra.DischargeDate IS NULL) >= r.Capacity
+                                  THEN N'Occupied' ELSE N'Available' END AS DisplayStatus
                       FROM dbo.tblRooms r
                       LEFT JOIN dbo.tblRoomTypes rt ON rt.Code = r.RoomType AND rt.IsDeleted = 0
                       WHERE r.IsActive = 1
                         AND (@search = N'' OR r.RoomNo LIKE N'%' + @search + N'%'
                              OR r.RoomType LIKE N'%' + @search + N'%'
                              OR rt.Name LIKE N'%' + @search + N'%'
-                             OR CASE WHEN EXISTS
-                                 (SELECT 1 FROM dbo.tblRoomAssignments ra
-                                  WHERE ra.RoomNo = r.RoomNo AND ra.DischargeDate IS NULL)
-                                 THEN N'Occupied' ELSE r.Status END LIKE N'%' + @search + N'%')
+                             OR CASE WHEN r.Status IN (N'Maintenance', N'Reserved') THEN r.Status
+                                     WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments ra
+                                           WHERE ra.RoomNo = r.RoomNo AND ra.DischargeDate IS NULL) >= r.Capacity
+                                     THEN N'Occupied' ELSE N'Available' END LIKE N'%' + @search + N'%')
                       ORDER BY r.RoomNo;",
                     new SqlParameter("@search", txtSearch.Text.Trim()));
 
                 foreach (DataRow room in rooms.Rows)
                 {
-                    dgvRooms.Rows.Add(room["RoomNo"], room["RoomTypeName"], "Not tracked",
-                        Convert.ToDecimal(room["Rate"]).ToString("0.00"), room["DisplayStatus"]);
+                    int occupied = Convert.ToInt32(room["OccupiedBeds"]);
+                    int capacity = Convert.ToInt32(room["Capacity"]);
+                    dgvRooms.Rows.Add(room["RoomNo"], room["RoomTypeName"],
+                        $"{occupied} / {capacity} occupied, {Math.Max(0, capacity - occupied)} free",
+                        Convert.ToDecimal(room["Rate"]).ToString("0.00"), room["DisplayStatus"], capacity);
                 }
             }
             catch (Exception ex)
@@ -81,10 +91,14 @@ namespace UI
 
             try
             {
-                DbHelper.Execute("EXEC dbo.usp_tblRooms_Create @RoomNo, @RoomType, @Rate",
+                int inserted = Convert.ToInt32(DbHelper.ExecuteScalar(
+                    "EXEC dbo.usp_tblRooms_Create @RoomNo, @RoomType, @Rate, @Capacity",
                     new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()),
                     new SqlParameter("@RoomType", roomType),
-                    new SqlParameter("@Rate", numRate.Value));
+                    new SqlParameter("@Rate", numRate.Value),
+                    new SqlParameter("@Capacity", decimal.ToInt32(_capacity.Value))));
+                if (inserted == 0)
+                    throw new InvalidOperationException("The room could not be created.");
                 LoadRoomData();
                 ClearForm();
                 MessageBox.Show("Room added.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -105,27 +119,44 @@ namespace UI
 
             try
             {
-                DbHelper.Execute("EXEC dbo.usp_tblRooms_Update @RoomNo, @RoomType, @Rate",
+                int updated = Convert.ToInt32(DbHelper.ExecuteScalar(
+                    "EXEC dbo.usp_tblRooms_Update @RoomNo, @RoomType, @Rate, @Capacity",
                     new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()),
                     new SqlParameter("@RoomType", roomType),
-                    new SqlParameter("@Rate", numRate.Value));
+                    new SqlParameter("@Rate", numRate.Value),
+                    new SqlParameter("@Capacity", decimal.ToInt32(_capacity.Value))));
+                if (updated == 0)
+                    throw new InvalidOperationException("The selected room was not found or is inactive.");
                 if (cmbAvailability.SelectedItem is string status && status != "Occupied")
                 {
-                    int rows = DbHelper.Execute(
-                        @"UPDATE dbo.tblRooms
-                          SET Status = @Status, UpdatedAt = SYSUTCDATETIME()
-                          WHERE RoomNo = @RoomNo AND IsActive = 1
-                            AND NOT EXISTS
-                            (
-                                SELECT 1 FROM dbo.tblRoomAssignments
-                                WHERE RoomNo = @RoomNo AND DischargeDate IS NULL
-                            );",
-                        new SqlParameter("@Status", status),
-                        new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()));
-                    if (rows == 0)
+                    int rows;
+                    if (status == "Available")
                     {
-                        throw new InvalidOperationException("Room availability is controlled by its active assignment and cannot be changed while occupied.");
+                        rows = DbHelper.Execute(
+                            @"UPDATE dbo.tblRooms
+                              SET Status = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
+                                                       WHERE RoomNo = @RoomNo AND DischargeDate IS NULL) >= Capacity
+                                                THEN N'Occupied' ELSE N'Available' END,
+                                  UpdatedAt = SYSUTCDATETIME()
+                              WHERE RoomNo = @RoomNo AND IsActive = 1;",
+                            new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()));
                     }
+                    else
+                    {
+                        rows = DbHelper.Execute(
+                            @"UPDATE dbo.tblRooms
+                              SET Status = @Status, UpdatedAt = SYSUTCDATETIME()
+                              WHERE RoomNo = @RoomNo AND IsActive = 1
+                                AND NOT EXISTS
+                                (
+                                    SELECT 1 FROM dbo.tblRoomAssignments
+                                    WHERE RoomNo = @RoomNo AND DischargeDate IS NULL
+                                );",
+                            new SqlParameter("@Status", status),
+                            new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()));
+                    }
+                    if (rows == 0)
+                        throw new InvalidOperationException("Room status cannot be changed while patients are admitted.");
                 }
                 LoadRoomData();
                 MessageBox.Show("Room updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -166,8 +197,9 @@ namespace UI
         {
             txtRoomNo.Clear();
             if (cmbRoomType.Items.Count > 0) cmbRoomType.SelectedIndex = 0;
-            txtBedNo.Text = "Not tracked";
+            txtBedNo.Text = "0 / 1 occupied, 1 free";
             numRate.Value = 0;
+            _capacity.Value = 1;
             cmbAvailability.SelectedIndex = -1;
             dgvRooms.ClearSelection();
         }
@@ -187,9 +219,31 @@ namespace UI
                     break;
                 }
             }
-            txtBedNo.Text = "Not tracked";
+            txtBedNo.Text = row.Cells["colBedNo"].Value?.ToString() ?? string.Empty;
+            _capacity.Value = Convert.ToInt32(row.Cells["colCapacity"].Value);
             if (decimal.TryParse(row.Cells["colRate"].Value?.ToString(), out decimal rate)) numRate.Value = rate;
             cmbAvailability.SelectedItem = row.Cells["colStatus"].Value?.ToString();
+        }
+
+        private void InitializeCapacityEditor()
+        {
+            _capacity.Minimum = 1;
+            _capacity.Maximum = 100;
+            _capacity.Value = 1;
+            _capacity.Font = new System.Drawing.Font("Segoe UI", 10F);
+            _capacity.Location = new System.Drawing.Point(160, 360);
+            _capacity.Size = new System.Drawing.Size(290, 31);
+            _capacity.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            var label = new Label
+            {
+                Text = "Bed Capacity:",
+                AutoSize = true,
+                Location = new System.Drawing.Point(25, 365),
+                Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+            };
+            grpRoomDetails.Controls.Add(label);
+            grpRoomDetails.Controls.Add(_capacity);
+            btnClear.Location = new System.Drawing.Point(btnClear.Left, 415);
         }
     }
 }

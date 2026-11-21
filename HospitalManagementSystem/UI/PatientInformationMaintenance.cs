@@ -14,6 +14,7 @@ namespace UI
         public PatientInformationMaintenance()
         {
             InitializeComponent();
+            UITheme.Apply(this);
 
             try
             {
@@ -61,11 +62,12 @@ namespace UI
                 return;
             }
 
-            if (!int.TryParse(txtAge.Text.Trim(), out var age))
+            if (!int.TryParse(txtAge.Text.Trim(), out var age) || age < 0 || age > 150)
             {
-                MessageBox.Show("Please enter a valid numeric value for Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Enter a valid age between 0 and 150.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!TryParseName(out var firstName, out var lastName)) return;
 
             if (_service == null)
             {
@@ -76,8 +78,8 @@ namespace UI
             // 2. Map form inputs to the Patient model
             var patient = new Patient
             {
-                FirstName = txtName.Text.Trim(),
-                LastName = "", // If you have a separate Last Name textbox, map it here
+                FirstName = firstName,
+                LastName = lastName,
                 Gender = cbGender.SelectedItem?.ToString(),
                 Address = txtAddress.Text.Trim(),
                 ContactNumber = txtContactNo.Text.Trim(),
@@ -111,6 +113,7 @@ namespace UI
                 MessageBox.Show("Patient ID is required to update a record.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            if (!TryParseName(out var firstName, out var lastName)) return;
 
             var fieldsToCheck = new Dictionary<string, string>
             {
@@ -128,9 +131,10 @@ namespace UI
                 return;
             }
 
-            if (!int.TryParse(txtPatientID.Text.Trim(), out var patientId) || !int.TryParse(txtAge.Text.Trim(), out var age))
+            if (!int.TryParse(txtPatientID.Text.Trim(), out var patientId) ||
+                !int.TryParse(txtAge.Text.Trim(), out var age) || age < 0 || age > 150)
             {
-                MessageBox.Show("Please enter valid numeric values for Patient ID and Age.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Enter a valid patient ID and an age between 0 and 150.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -143,8 +147,8 @@ namespace UI
             var patient = new Patient
             {
                 PatientID = patientId,
-                FirstName = txtName.Text.Trim(),
-                LastName = "",
+                FirstName = firstName,
+                LastName = lastName,
                 Gender = cbGender.SelectedItem?.ToString(),
                 Address = txtAddress.Text.Trim(),
                 ContactNumber = txtContactNo.Text.Trim(),
@@ -216,6 +220,23 @@ namespace UI
             txtAddress.Text = string.Empty;
             txtContactNo.Text = string.Empty;
             if (cbGender.Items.Count > 0) cbGender.SelectedIndex = 0;
+        }
+
+        private bool TryParseName(out string firstName, out string lastName)
+        {
+            var parts = txtName.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length < 2)
+            {
+                firstName = string.Empty;
+                lastName = string.Empty;
+                MessageBox.Show("Enter both a first name and a last name.", "Validation Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtName.Focus();
+                return false;
+            }
+
+            firstName = parts[0];
+            lastName = string.Join(' ', parts.Skip(1));
+            return true;
         }
     }
 }

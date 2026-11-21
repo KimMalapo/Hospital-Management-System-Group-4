@@ -10,7 +10,6 @@ namespace UI
         {
             var dt = new DataTable();
             var cs = Config.GetConnectionString();
-            if (string.IsNullOrWhiteSpace(cs)) return dt;
 
             using var conn = new SqlConnection(cs);
             using var cmd = conn.CreateCommand();
@@ -29,7 +28,6 @@ namespace UI
         public static int Execute(string sql, params SqlParameter[] parameters)
         {
             var cs = Config.GetConnectionString();
-            if (string.IsNullOrWhiteSpace(cs)) return 0;
 
             using var conn = new SqlConnection(cs);
             using var cmd = conn.CreateCommand();
@@ -41,6 +39,22 @@ namespace UI
 
             conn.Open();
             return cmd.ExecuteNonQuery();
+        }
+
+        public static object? ExecuteScalar(string sql, params SqlParameter[] parameters)
+        {
+            var cs = Config.GetConnectionString();
+
+            using var conn = new SqlConnection(cs);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            if (parameters != null)
+            {
+                foreach (var p in parameters) cmd.Parameters.Add(p);
+            }
+
+            conn.Open();
+            return cmd.ExecuteScalar();
         }
     }
 }

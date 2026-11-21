@@ -14,6 +14,7 @@ namespace UI
         public MasterDataUserControl()
         {
             InitializeComponent();
+            UITheme.Apply(this);
         }
 
         private void MasterDataUserControl_Load(object sender, EventArgs e)
@@ -36,6 +37,7 @@ namespace UI
             _serviceCategoryLabel.Visible = false;
             grpEntry.Controls.Add(_serviceCategory);
             grpEntry.Controls.Add(_serviceCategoryLabel);
+            UITheme.Apply(grpEntry);
             LoadMasterData();
         }
 

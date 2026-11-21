@@ -14,6 +14,7 @@ namespace UI
         public UnifiedSearchUserControl()
         {
             InitializeComponent();
+            UITheme.Apply(this);
         }
 
         private void UnifiedSearchUserControl_Load(object sender, EventArgs e)

@@ -25,12 +25,14 @@ namespace BusinessLogic
             _db.QuerySP("usp_tblRooms_GetById",
                 new SqlParameter("@RoomNo", roomNo));
 
-        public int Create(string roomNo, string roomTypeCode, decimal rate)
+        public int Create(string roomNo, string roomTypeCode, decimal rate, int capacity = 1)
         {
             if (string.IsNullOrWhiteSpace(roomNo))
                 throw new ArgumentException("Room number is required");
             if (rate < 0)
                 throw new ArgumentException("Rate must be 0 or greater");
+            if (capacity < 1)
+                throw new ArgumentException("Room capacity must be at least one bed.");
 
             var types = _lookup.GetAll("RoomTypes");
             var type = types.Find(t =>
@@ -45,16 +47,18 @@ namespace BusinessLogic
             return _db.ExecuteSP("usp_tblRooms_Create",
                 new SqlParameter("@RoomNo", roomNo),
                 new SqlParameter("@RoomType", roomTypeCode),
-                new SqlParameter("@Rate", rate));
+                new SqlParameter("@Rate", rate),
+                new SqlParameter("@Capacity", capacity));
         }
 
         // Old name the UI is calling
         public int CreateRoom(string insertSql, params SqlParameter[] parameters) =>
             _db.Execute(insertSql, parameters);
 
-        public int Update(string roomNo, string roomTypeCode, decimal rate)
+        public int Update(string roomNo, string roomTypeCode, decimal rate, int capacity = 1)
         {
             if (rate < 0) throw new ArgumentException("Rate must be 0 or greater");
+            if (capacity < 1) throw new ArgumentException("Room capacity must be at least one bed.");
 
             var types = _lookup.GetAll("RoomTypes");
             var type = types.Find(t =>
@@ -69,7 +73,8 @@ namespace BusinessLogic
             return _db.ExecuteSP("usp_tblRooms_Update",
                 new SqlParameter("@RoomNo", roomNo),
                 new SqlParameter("@RoomType", roomTypeCode),
-                new SqlParameter("@Rate", rate));
+                new SqlParameter("@Rate", rate),
+                new SqlParameter("@Capacity", capacity));
         }
 
         public int Delete(string roomNo) =>

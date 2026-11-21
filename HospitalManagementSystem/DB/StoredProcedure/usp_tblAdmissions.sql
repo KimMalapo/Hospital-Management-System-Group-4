@@ -22,15 +22,23 @@ BEGIN
         IF EXISTS (SELECT 1 FROM dbo.tblAdmissions WHERE PatientID = @PatientID AND Status = N'Admitted')
             RAISERROR(N'This patient is already admitted. Discharge the current admission first.', 16, 1);
 
-        -- UPDLOCK so two people cannot take the same room at the same moment
-        IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK) WHERE RoomNo = @RoomNo AND IsActive = 1)
+        -- Serialize capacity checks on the room row so concurrent admits cannot overfill it.
+        DECLARE @Capacity INT, @RoomStatus NVARCHAR(30);
+        SELECT @Capacity = Capacity, @RoomStatus = Status
+        FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK)
+        WHERE RoomNo = @RoomNo AND IsActive = 1;
+
+        IF @Capacity IS NULL
             RAISERROR(N'The room was not found or is inactive.', 16, 1);
 
-        IF NOT EXISTS (SELECT 1 FROM dbo.tblRooms WHERE RoomNo = @RoomNo AND Status = N'Available')
-            RAISERROR(N'The room is not available.', 16, 1);
+        IF @RoomStatus IN (N'Maintenance', N'Reserved')
+            RAISERROR(N'The room is not available for admission.', 16, 1);
 
-        IF EXISTS (SELECT 1 FROM dbo.tblRoomAssignments WHERE RoomNo = @RoomNo AND DischargeDate IS NULL)
-            RAISERROR(N'The room is already occupied.', 16, 1);
+        DECLARE @Occupied INT =
+            (SELECT COUNT(*) FROM dbo.tblRoomAssignments WITH (UPDLOCK, HOLDLOCK)
+             WHERE RoomNo = @RoomNo AND DischargeDate IS NULL);
+        IF @Occupied >= @Capacity
+            RAISERROR(N'The room is at full capacity. Select another room.', 16, 1);
 
         IF @DepartmentCode IS NOT NULL AND NOT EXISTS
            (SELECT 1 FROM dbo.tblDepartmentTypes WHERE Code = @DepartmentCode AND IsDeleted = 0)
@@ -46,7 +54,10 @@ BEGIN
         VALUES (@PatientID, @RoomNo, @When, @Reason, @CreatedBy);
         DECLARE @AssignmentID INT = CAST(SCOPE_IDENTITY() AS INT);
 
-        UPDATE dbo.tblRooms SET Status = N'Occupied', UpdatedAt = SYSUTCDATETIME() WHERE RoomNo = @RoomNo;
+        UPDATE dbo.tblRooms
+        SET Status = CASE WHEN @Occupied + 1 >= @Capacity THEN N'Occupied' ELSE N'Available' END,
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE RoomNo = @RoomNo;
 
         INSERT INTO dbo.tblAdmissions
             (PatientID, AssignmentID, DepartmentCode, DiagnosisCode, AttendingPhysician, Reason, AdmitDate, CreatedBy)
@@ -71,11 +82,37 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT a.AdmissionID, a.AdmissionNo, a.PatientID, p.LastName + N', ' + p.FirstName AS PatientName,
-           a.AssignmentID, ra.RoomNo, a.DepartmentCode, a.DiagnosisCode, a.AttendingPhysician, a.Reason,
-           a.Status, a.AdmitDate, a.DischargeDate, a.DischargeSummary, a.CreatedBy
+           a.AssignmentID, ra.RoomNo, a.DepartmentCode, a.DiagnosisCode,
+           COALESCE(dc.Description, a.DiagnosisCode) AS DiagnosisName,
+           a.AttendingPhysician, a.Reason, a.Status, a.AdmitDate, a.DischargeDate,
+           a.DischargeSummary, a.CreatedBy, stay.DaysStayed,
+           CONVERT(DECIMAL(12,2), CASE WHEN a.Status = N'Admitted' OR bill.TotalAmount IS NULL
+               THEN ISNULL(r.Rate, 0) * stay.DaysStayed + ISNULL(charges.ServiceTotal, 0)
+               ELSE bill.TotalAmount END) AS RunningTotal
     FROM   dbo.tblAdmissions a
     JOIN   dbo.tblPatients p ON p.PatientID = a.PatientID
     LEFT JOIN dbo.tblRoomAssignments ra ON ra.AssignmentID = a.AssignmentID
+    LEFT JOIN dbo.tblRooms r ON r.RoomNo = ra.RoomNo
+    LEFT JOIN dbo.tblDiagnosisCodes dc ON dc.Code = a.DiagnosisCode AND dc.IsDeleted = 0
+    OUTER APPLY
+    (
+        SELECT SUM(c.LineTotal) AS ServiceTotal
+        FROM dbo.tblAdmissionCharges c
+        WHERE c.AdmissionID = a.AdmissionID AND c.IsVoided = 0
+    ) charges
+    CROSS APPLY (SELECT COALESCE(a.DischargeDate, SYSUTCDATETIME()) AS EndDate) stayEnd
+    CROSS APPLY
+    (
+        SELECT CASE WHEN stayEnd.EndDate <= a.AdmitDate THEN 1
+                    ELSE (DATEDIFF(HOUR, a.AdmitDate, stayEnd.EndDate) + 23) / 24 END AS DaysStayed
+    ) stay
+    OUTER APPLY
+    (
+        SELECT TOP (1) b.TotalAmount
+        FROM dbo.tblBills b
+        WHERE b.AdmissionID = a.AdmissionID AND b.Status <> N'Voided'
+        ORDER BY b.GeneratedAt DESC, b.BillID DESC
+    ) bill
     WHERE  a.Status = N'Admitted'
     ORDER BY a.AdmitDate DESC;
 END
@@ -119,11 +156,37 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @t NVARCHAR(202) = N'%' + ISNULL(LTRIM(RTRIM(@SearchTerm)), N'') + N'%';
     SELECT a.AdmissionID, a.AdmissionNo, a.PatientID, p.LastName + N', ' + p.FirstName AS PatientName,
-           a.AssignmentID, ra.RoomNo, a.DepartmentCode, a.DiagnosisCode, a.AttendingPhysician, a.Reason,
-           a.Status, a.AdmitDate, a.DischargeDate, a.DischargeSummary, a.CreatedBy
+           a.AssignmentID, ra.RoomNo, a.DepartmentCode, a.DiagnosisCode,
+           COALESCE(dc.Description, a.DiagnosisCode) AS DiagnosisName,
+           a.AttendingPhysician, a.Reason, a.Status, a.AdmitDate, a.DischargeDate,
+           a.DischargeSummary, a.CreatedBy, stay.DaysStayed,
+           CONVERT(DECIMAL(12,2), CASE WHEN a.Status = N'Admitted' OR bill.TotalAmount IS NULL
+               THEN ISNULL(r.Rate, 0) * stay.DaysStayed + ISNULL(charges.ServiceTotal, 0)
+               ELSE bill.TotalAmount END) AS RunningTotal
     FROM   dbo.tblAdmissions a
     JOIN   dbo.tblPatients p ON p.PatientID = a.PatientID
     LEFT JOIN dbo.tblRoomAssignments ra ON ra.AssignmentID = a.AssignmentID
+    LEFT JOIN dbo.tblRooms r ON r.RoomNo = ra.RoomNo
+    LEFT JOIN dbo.tblDiagnosisCodes dc ON dc.Code = a.DiagnosisCode AND dc.IsDeleted = 0
+    OUTER APPLY
+    (
+        SELECT SUM(c.LineTotal) AS ServiceTotal
+        FROM dbo.tblAdmissionCharges c
+        WHERE c.AdmissionID = a.AdmissionID AND c.IsVoided = 0
+    ) charges
+    CROSS APPLY (SELECT COALESCE(a.DischargeDate, SYSUTCDATETIME()) AS EndDate) stayEnd
+    CROSS APPLY
+    (
+        SELECT CASE WHEN stayEnd.EndDate <= a.AdmitDate THEN 1
+                    ELSE (DATEDIFF(HOUR, a.AdmitDate, stayEnd.EndDate) + 23) / 24 END AS DaysStayed
+    ) stay
+    OUTER APPLY
+    (
+        SELECT TOP (1) b.TotalAmount
+        FROM dbo.tblBills b
+        WHERE b.AdmissionID = a.AdmissionID AND b.Status <> N'Voided'
+        ORDER BY b.GeneratedAt DESC, b.BillID DESC
+    ) bill
     WHERE  p.FirstName LIKE @t OR p.LastName LIKE @t
         OR p.FirstName + N' ' + p.LastName LIKE @t
         OR a.AdmissionNo LIKE @t OR ra.RoomNo LIKE @t
@@ -154,11 +217,20 @@ BEGIN
 
         SELECT @RoomNo = RoomNo FROM dbo.tblRoomAssignments WHERE AssignmentID = @AssignmentID;
 
+        -- Serialize status updates with admissions to the same room.
+        SELECT @RoomNo = RoomNo
+        FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK)
+        WHERE RoomNo = @RoomNo;
+
         UPDATE dbo.tblRoomAssignments
         SET    DischargeDate = CASE WHEN SYSUTCDATETIME() < AdmitDate THEN AdmitDate ELSE SYSUTCDATETIME() END
         WHERE  AssignmentID = @AssignmentID AND DischargeDate IS NULL;
-        UPDATE dbo.tblRooms SET Status = N'Available', UpdatedAt = SYSUTCDATETIME()
-        WHERE  RoomNo = @RoomNo AND Status = N'Occupied';
+        UPDATE dbo.tblRooms
+        SET Status = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
+                                WHERE RoomNo = @RoomNo AND DischargeDate IS NULL) >= Capacity
+                          THEN N'Occupied' ELSE N'Available' END,
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE RoomNo = @RoomNo AND Status IN (N'Available', N'Occupied');
 
         UPDATE dbo.tblAdmissions
         SET    Status = N'Cancelled', CancelledBy = @CancelledBy, UpdatedAt = SYSUTCDATETIME()
@@ -197,12 +269,21 @@ BEGIN
 
         SELECT @RoomNo = RoomNo FROM dbo.tblRoomAssignments WHERE AssignmentID = @AssignmentID;
 
+        -- Serialize status updates with admissions to the same room.
+        SELECT @RoomNo = RoomNo
+        FROM dbo.tblRooms WITH (UPDLOCK, HOLDLOCK)
+        WHERE RoomNo = @RoomNo;
+
         UPDATE dbo.tblRoomAssignments
         SET    DischargeDate = CASE WHEN SYSUTCDATETIME() < AdmitDate THEN AdmitDate ELSE SYSUTCDATETIME() END
         WHERE  AssignmentID = @AssignmentID AND DischargeDate IS NULL;
 
-        UPDATE dbo.tblRooms SET Status = N'Available', UpdatedAt = SYSUTCDATETIME()
-        WHERE  RoomNo = @RoomNo AND Status = N'Occupied';
+        UPDATE dbo.tblRooms
+        SET Status = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
+                                WHERE RoomNo = @RoomNo AND DischargeDate IS NULL) >= Capacity
+                          THEN N'Occupied' ELSE N'Available' END,
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE RoomNo = @RoomNo AND Status IN (N'Available', N'Occupied');
 
         UPDATE dbo.tblAdmissions
         SET    Status = N'Discharged', DischargeDate = CASE WHEN SYSUTCDATETIME() < AdmitDate THEN AdmitDate ELSE SYSUTCDATETIME() END,
