@@ -128,9 +128,21 @@ namespace BusinessLogic
                 Name = r["Name"] as string,
                 Status = r["Status"] as string,
                 Notes = r["Notes"] as string,
-                IsDeleted = r.GetSchemaTable()?.Columns.Contains("IsDeleted") == true &&
-                            r["IsDeleted"] != DBNull.Value && Convert.ToBoolean(r["IsDeleted"])
+                IsDeleted = HasColumn(r, "IsDeleted") &&
+                            !r.IsDBNull(r.GetOrdinal("IsDeleted")) &&
+                            r.GetBoolean(r.GetOrdinal("IsDeleted"))
             };
+        }
+
+        /// <summary>True when the current result set has a column with this name (not just a schema description).</summary>
+        private static bool HasColumn(SqlDataReader r, string name)
+        {
+            for (var i = 0; i < r.FieldCount; i++)
+            {
+                if (string.Equals(r.GetName(i), name, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
     }
 }

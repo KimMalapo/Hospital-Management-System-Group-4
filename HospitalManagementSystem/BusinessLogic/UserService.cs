@@ -40,10 +40,12 @@ namespace BusinessLogic
 
             try
             {
-                return _db.ExecuteSP("usp_tblUsers_Create",
+                // The procedure ends with SELECT SCOPE_IDENTITY() AS UserID, so read it as a scalar.
+                var newId = _db.ExecuteScalarSP("usp_tblUsers_Create",
                     new SqlParameter("@Email", email),
                     new SqlParameter("@Password", hash),
                     new SqlParameter("@Role", role));
+                return newId == null || newId == DBNull.Value ? 0 : Convert.ToInt32(newId);
             }
             catch (SqlException ex) when (ex.Number == 2627)
             {
