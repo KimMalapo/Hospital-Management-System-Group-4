@@ -47,9 +47,41 @@ namespace BusinessLogic
             return conn;
         }
 
+        /// <summary>
+        /// Loads a result set. Timestamp columns (datetime, datetime2, smalldatetime) come back in local time;
+        /// the database stores them in UTC. Plain date columns such as DateOfBirth are left untouched.
+        /// </summary>
+        private static DataTable LoadTable(SqlDataReader reader)
+        {
+            // Must be read before Load, which consumes the reader.
+            var timestampColumns = new List<string>();
+            for (var i = 0; i < reader.FieldCount; i++)
+            {
+                var typeName = reader.GetDataTypeName(i);
+                if (typeName.Equals("datetime", StringComparison.OrdinalIgnoreCase) ||
+                    typeName.Equals("datetime2", StringComparison.OrdinalIgnoreCase) ||
+                    typeName.Equals("smalldatetime", StringComparison.OrdinalIgnoreCase))
+                    timestampColumns.Add(reader.GetName(i));
+            }
+
+            var dt = new DataTable();
+            dt.Load(reader);
+
+            foreach (var name in timestampColumns)
+            {
+                if (!dt.Columns.Contains(name)) continue;
+                foreach (DataRow row in dt.Rows)
+                {
+                    if (row[name] is DateTime utc)
+                        row[name] = TimeConversion.ToLocal(utc);
+                }
+            }
+            dt.AcceptChanges();
+            return dt;
+        }
+
         public DataTable Query(string sql, params SqlParameter[] parameters)
         {
-            var dt = new DataTable();
             using var conn = OpenConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = sql;
@@ -57,13 +89,11 @@ namespace BusinessLogic
             if (parameters != null)
                 foreach (var p in parameters) cmd.Parameters.Add(p);
             using var reader = cmd.ExecuteReader();
-            dt.Load(reader);
-            return dt;
+            return LoadTable(reader);
         }
 
         public DataTable QuerySP(string storedProc, params SqlParameter[] parameters)
         {
-            var dt = new DataTable();
             using var conn = OpenConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = storedProc;
@@ -71,8 +101,7 @@ namespace BusinessLogic
             if (parameters != null)
                 foreach (var p in parameters) cmd.Parameters.Add(p);
             using var reader = cmd.ExecuteReader();
-            dt.Load(reader);
-            return dt;
+            return LoadTable(reader);
         }
 
         public int Execute(string sql, params SqlParameter[] parameters)

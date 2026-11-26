@@ -46,7 +46,7 @@ public class AdmissionService : ServiceBase
                 P("@DiagnosisCode", diagnosis),
                 P("@AttendingPhysician", physician),
                 P("@Reason", why),
-                P("@AdmitDate", admitDate),
+                P("@AdmitDate", TimeConversion.ToUtc(admitDate)),   // the database clock is UTC
                 P("@CreatedBy", CurrentUser.EmailOrSystem));
 
             if (dt.Rows.Count == 0)
