@@ -59,6 +59,7 @@
     <Folder Include="Table" />
     <Folder Include="Trigger" />
     <Folder Include="StoredProcedure" />
+    <Folder Include="Seed" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Table\dbo.tblAuditLog.sql" />
@@ -83,6 +84,11 @@
     <Build Include="Trigger\dbo.tblRooms_Triggers.sql" />
     <Build Include="Trigger\dbo.tblRoomAssignments_Triggers.sql" />
     <Build Include="Trigger\dbo.tblUsers_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblServices_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblAdmissions_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblAdmissionCharges_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblBills_Triggers.sql" />
+    <Build Include="Trigger\dbo.tblPayments_Triggers.sql" />
     <Build Include="StoredProcedure\SearchStoredProcedures.sql" />
     <Build Include="StoredProcedure\usp_lookups.sql" />
     <Build Include="StoredProcedure\usp_lookups_write.sql" />
@@ -99,5 +105,11 @@
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Script.PostDeployment.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Pulled in by Script.PostDeployment.sql with :r, so they are listed but not built as schema objects. -->
+    <None Include="Seed\Seed_Lookups.sql" />
+    <None Include="Seed\Seed_Services.sql" />
+    <None Include="Seed\Seed_Demo.sql" />
   </ItemGroup>
 </Project>
