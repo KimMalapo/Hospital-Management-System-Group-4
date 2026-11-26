@@ -125,9 +125,8 @@ BEGIN
     EXEC dbo.usp_tblPayments_Post @BillID = @bill, @Amount = @rest, @Method = N'Card', @ReferenceNo = N'DEMO-CARD-0001', @ReceivedBy = N'demo seed';
     EXEC dbo.usp_tblAdmissions_Discharge @AdmissionID = @adm, @DischargeSummary = N'Recovered well after surgery. Follow-up in two weeks.', @DischargedBy = N'demo seed';
     END
+END;
 
-INSERT INTO dbo.tblPatients (FirstName, LastName, DateOfBirth, Gender, ContactNumber, Address, Email)
-SELECT s.FirstName, s.LastName, s.DateOfBirth, s.Gender, s.ContactNumber, s.Address, s.Email
 -- Add admission, clinical charge, billing, and payment examples for the remaining demo patients.
 DECLARE @AdditionalCases TABLE
 (
