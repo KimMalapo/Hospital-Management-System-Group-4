@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Forms;
+using BusinessLogic;
 
 namespace UI
 {
@@ -39,6 +41,17 @@ namespace UI
             UIHelper.ShowView(pnlUCHandler, new BillingUserControl());
         }
 
+        private void btnServiceCatalog_Click(object sender, EventArgs e)
+        {
+            if (!Permissions.IsAllowed(AppAction.ManageServices))
+            {
+                MessageBox.Show(this, "Only an Admin can access the Service Catalog.", "Access denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            UIHelper.ShowView<ServiceCatalogUserControl>(pnlUCHandler);
+        }
+
         private void UILandingPage_Load(object sender, EventArgs e)
         {
             if (!SessionManager.IsAuthenticated)
@@ -49,6 +62,10 @@ namespace UI
             }
 
             lblSignedInAs.Text = SessionManager.CurrentEmail ?? "Unknown";
+
+            // Hide Service Catalog from Staff users (AC #7)
+            btnServiceCatalog.Visible = Permissions.IsAllowed(AppAction.ManageServices);
+
             UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
         }
 
@@ -93,6 +110,12 @@ namespace UI
 
         private void ActiveAdmissionsUserControl_ActionRequested(object? sender, ActiveAdmissionActionEventArgs e)
         {
+            if (e.Action == ActiveAdmissionAction.AddCharges)
+            {
+                UIHelper.ShowView(pnlUCHandler, new ChargesUserControl(e.AdmissionId));
+                return;
+            }
+
             if (e.Action == ActiveAdmissionAction.ViewBill)
             {
                 UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));
@@ -101,8 +124,6 @@ namespace UI
 
             var action = e.Action switch
             {
-                ActiveAdmissionAction.AddCharges => "Add charges",
-                ActiveAdmissionAction.ViewBill => "View bill",
                 ActiveAdmissionAction.Discharge => "Discharge",
                 _ => "Continue"
             };
