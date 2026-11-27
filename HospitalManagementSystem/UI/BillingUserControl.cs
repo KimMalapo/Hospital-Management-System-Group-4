@@ -6,6 +6,7 @@ using Model;
 
 namespace UI;
 
+/// <summary>Billing screen: makes the bill and applies a discount. Controls are made in code.</summary>
 public sealed class BillingUserControl : UserControl
 {
     private readonly ComboBox _admissions = new();
@@ -21,6 +22,8 @@ public sealed class BillingUserControl : UserControl
     private readonly Label _message = new();
     private readonly Button _generate = new();
     private readonly Button _applyDiscount = new();
+    private readonly Button _payments = new();
+    private readonly Button _voidBill = new();
     private readonly ErrorProvider _errors = new();
     private readonly int? _initialAdmissionId;
     private AdmissionService? _admissionService;
@@ -39,6 +42,8 @@ public sealed class BillingUserControl : UserControl
         _admissions.SelectedIndexChanged += Admissions_SelectedIndexChanged;
         _generate.Click += Generate_Click;
         _applyDiscount.Click += ApplyDiscount_Click;
+        _payments.Click += Payments_Click;
+        _voidBill.Click += VoidBill_Click;
     }
 
     protected override void Dispose(bool disposing)
@@ -92,8 +97,9 @@ public sealed class BillingUserControl : UserControl
         admissionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
         admissionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
         admissionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        admissionLayout.Controls.Add(CreateFieldLabel("Admission"), 0, 0);
-        admissionLayout.SetColumnSpan(admissionLayout.GetControlFromPosition(0, 0)!, 2);
+        var admissionLabel = CreateFieldLabel("Admission");
+        admissionLayout.Controls.Add(admissionLabel, 0, 0);
+        admissionLayout.SetColumnSpan(admissionLabel, 2);
         _admissions.Dock = DockStyle.Fill;
         _admissions.DropDownStyle = ComboBoxStyle.DropDownList;
         _admissions.Font = new Font("Segoe UI", 10);
@@ -125,14 +131,14 @@ public sealed class BillingUserControl : UserControl
         body.Controls.Add(itemsCard, 0, 0);
 
         var totalsCard = CreateCard(new Padding(18));
-        var totals = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 11, Margin = Padding.Empty };
+        var totals = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 13, Margin = Padding.Empty };
         totals.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         totals.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        totals.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        for (var i = 1; i < 10; i++) totals.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        for (var i = 0; i < 12; i++) totals.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
         totals.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        totals.Controls.Add(CreateSectionTitle("Bill summary"), 0, 0);
-        totals.SetColumnSpan(totals.GetControlFromPosition(0, 0)!, 2);
+        var summaryTitle = CreateSectionTitle("Bill summary");
+        totals.Controls.Add(summaryTitle, 0, 0);
+        totals.SetColumnSpan(summaryTitle, 2);
         AddTotal(totals, 1, "Status", _billStatus);
         AddTotal(totals, 2, "Subtotal", _subtotal);
         AddTotal(totals, 3, "Discount", _discountTotal);
@@ -166,11 +172,23 @@ public sealed class BillingUserControl : UserControl
         _applyDiscount.Margin = new Padding(0, 4, 0, 4);
         totals.Controls.Add(_applyDiscount, 0, 9);
         totals.SetColumnSpan(_applyDiscount, 2);
+        _payments.Text = "Payments / receipts";
+        StylePrimaryButton(_payments);
+        _payments.Dock = DockStyle.Fill;
+        _payments.Margin = new Padding(0, 4, 0, 4);
+        totals.Controls.Add(_payments, 0, 10);
+        totals.SetColumnSpan(_payments, 2);
+        _voidBill.Text = "Void bill";
+        _voidBill.Dock = DockStyle.Fill;
+        _voidBill.Margin = new Padding(0, 4, 0, 4);
+        _voidBill.Visible = Permissions.IsAllowed(AppAction.VoidBill); // Admin only
+        totals.Controls.Add(_voidBill, 0, 11);
+        totals.SetColumnSpan(_voidBill, 2);
         _message.Dock = DockStyle.Fill;
         _message.ForeColor = Color.FromArgb(185, 28, 28);
         _message.TextAlign = ContentAlignment.MiddleLeft;
         _message.AutoEllipsis = true;
-        totals.Controls.Add(_message, 0, 10);
+        totals.Controls.Add(_message, 0, 12);
         totals.SetColumnSpan(_message, 2);
         totalsCard.Controls.Add(totals);
         body.Controls.Add(totalsCard, 1, 0);
@@ -243,9 +261,6 @@ public sealed class BillingUserControl : UserControl
             SetBillTotals(_bill);
             _generate.Enabled = false;
             _generate.Text = "Bill already generated";
-            _discount.Enabled = _bill.Status != BillStatus.Paid && _bill.Status != BillStatus.Voided && _bill.Balance > 0;
-            _discountReason.Enabled = _discount.Enabled;
-            _applyDiscount.Enabled = _discount.Enabled;
         }
         catch (Exception ex)
         {
@@ -307,6 +322,36 @@ public sealed class BillingUserControl : UserControl
         }
     }
 
+    // Opens the payments window; the bill totals may change there, so reload afterwards.
+    private void Payments_Click(object? sender, EventArgs e)
+    {
+        if (_bill == null) return;
+
+        using (var form = new PaymentsForm(_bill.BillID, _bill.BillNo ?? string.Empty))
+            form.ShowDialog(this);
+
+        RefreshBill();
+    }
+
+    private void VoidBill_Click(object? sender, EventArgs e)
+    {
+        if (_bill == null || _billingService == null) return;
+
+        var reason = UIHelper.AskText("Why is this bill being voided?", "Void bill");
+        if (reason.Length == 0) return;
+
+        try
+        {
+            _billingService.Void(_bill.BillID, reason);
+            RefreshBill();
+            SetMessage("Bill voided.", false);
+        }
+        catch (Exception ex)
+        {
+            UIHelper.ShowServiceError(this, ex, "void bill");
+        }
+    }
+
     private void ConfigureItemsGrid()
     {
         _items.ReadOnly = true;
@@ -358,10 +403,14 @@ public sealed class BillingUserControl : UserControl
             _discount.Enabled = false;
             _discountReason.Enabled = false;
             _applyDiscount.Enabled = false;
+            _payments.Enabled = false;
+            _voidBill.Enabled = false;
             _generate.Text = "Generate bill";
         }
         else
         {
+            _payments.Enabled = bill.Status != BillStatus.Voided;
+            _voidBill.Enabled = bill.Status != BillStatus.Voided;
             _discount.Enabled = bill.Status != BillStatus.Paid && bill.Status != BillStatus.Voided && bill.Balance > 0;
             _discountReason.Enabled = _discount.Enabled;
             _applyDiscount.Enabled = _discount.Enabled;

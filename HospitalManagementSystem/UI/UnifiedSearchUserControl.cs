@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
+﻿using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace UI
 {
+    /// <summary>Search screen: find a patient and see their admission status.</summary>
     public partial class UnifiedSearchUserControl : UserControl
     {
         public UnifiedSearchUserControl()
@@ -17,11 +12,7 @@ namespace UI
             UITheme.Apply(this);
         }
 
-        private void UnifiedSearchUserControl_Load(object sender, EventArgs e)
-        {
-            // Initial state / defaults
-            ClearSearchFields();
-        }
+        private void UnifiedSearchUserControl_Load(object sender, EventArgs e) => ClearSearchFields();
 
         private void btnSearch_Click(object sender, EventArgs e)
         {
@@ -29,7 +20,7 @@ namespace UI
 
             if (string.IsNullOrEmpty(searchInput))
             {
-                MessageBox.Show("Please enter a Patient ID or Name to search.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Please enter a Patient ID or Name to search.", "Validation Error");
                 return;
             }
 
@@ -63,35 +54,33 @@ namespace UI
                     return;
                 }
 
-                DataRow patient = results.Rows[0];
-                lblValPatientID.Text = patient["PatientID"].ToString();
-                lblValFullName.Text = $"{patient["FirstName"]} {patient["LastName"]}";
-                lblValGender.Text = patient["Gender"] == DBNull.Value ? "Not specified" : patient["Gender"].ToString();
-                lblValContact.Text = patient["ContactNumber"] == DBNull.Value ? "Not provided" : patient["ContactNumber"].ToString();
-
-                if (patient["DateOfBirth"] == DBNull.Value)
-                {
-                    lblValAge.Text = "Not provided";
-                }
-                else
-                {
-                    DateTime dateOfBirth = Convert.ToDateTime(patient["DateOfBirth"]);
-                    int age = DateTime.Today.Year - dateOfBirth.Year;
-                    if (dateOfBirth.Date > DateTime.Today.AddYears(-age)) age--;
-                    lblValAge.Text = age.ToString();
-                }
-
-                bool hasActiveAdmission = patient["AdmissionStatus"] != DBNull.Value;
-                lblValAdmissionStatus.Text = hasActiveAdmission ? "Admitted" : "Not Admitted";
-                lblValRoom.Text = patient["RoomNo"] == DBNull.Value ? "No active room assignment" : patient["RoomNo"].ToString();
-                lblValBed.Text = hasActiveAdmission ? "Not tracked" : "---";
-                lblValRoomStatus.Text = patient["RoomStatus"] == DBNull.Value ? "---" : patient["RoomStatus"].ToString();
+                ShowPatientDetails(results.Rows[0]);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to search patients: {ex.Message}", "Search Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to search patients: {ex.Message}", "Search Error");
             }
         }
+
+        private void ShowPatientDetails(DataRow patient)
+        {
+            lblValPatientID.Text = patient["PatientID"].ToString();
+            lblValFullName.Text = $"{patient["FirstName"]} {patient["LastName"]}";
+            lblValGender.Text = ValueOrDefault(patient, "Gender", "Not specified");
+            lblValContact.Text = ValueOrDefault(patient, "ContactNumber", "Not provided");
+            lblValAge.Text = patient["DateOfBirth"] == DBNull.Value
+                ? "Not provided"
+                : UIHelper.CalculateAge(Convert.ToDateTime(patient["DateOfBirth"])).ToString();
+
+            bool hasActiveAdmission = patient["AdmissionStatus"] != DBNull.Value;
+            lblValAdmissionStatus.Text = hasActiveAdmission ? "Admitted" : "Not Admitted";
+            lblValRoom.Text = ValueOrDefault(patient, "RoomNo", "No active room assignment");
+            lblValBed.Text = hasActiveAdmission ? "Not tracked" : "---";
+            lblValRoomStatus.Text = ValueOrDefault(patient, "RoomStatus", "---");
+        }
+
+        private static string? ValueOrDefault(DataRow row, string column, string fallback) =>
+            row[column] == DBNull.Value ? fallback : row[column].ToString();
 
         private void ClearSearchFields()
         {
@@ -107,4 +96,4 @@ namespace UI
             lblValRoomStatus.Text = "---";
         }
     }
-}
+}

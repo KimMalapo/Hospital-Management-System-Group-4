@@ -5,6 +5,7 @@ using Model;
 
 namespace BusinessLogic
 {
+    /// <summary>Patients: search, get, add, update, delete.</summary>
     public class PatientService
     {
         private readonly DbExecutor _db;
@@ -24,8 +25,7 @@ namespace BusinessLogic
         {
             var dt = _db.QuerySP("usp_tblPatients_GetById",
                 new SqlParameter("@PatientID", id));
-            if (dt.Rows.Count == 0) return null;
-            return Map(dt.Rows[0]);
+            return dt.Rows.Count == 0 ? null : Map(dt.Rows[0]);
         }
 
         public DataTable Search(string term) =>
@@ -37,14 +37,7 @@ namespace BusinessLogic
             PatientValidator.Validate(p);
             try
             {
-                var result = _db.ExecuteScalarSP("usp_tblPatients_Create",
-                    new SqlParameter("@FirstName", p.FirstName ?? (object)DBNull.Value),
-                    new SqlParameter("@LastName", p.LastName ?? (object)DBNull.Value),
-                    new SqlParameter("@DateOfBirth", p.DateOfBirth ?? (object)DBNull.Value),
-                    new SqlParameter("@Gender", p.Gender ?? (object)DBNull.Value),
-                    new SqlParameter("@ContactNumber", p.ContactNumber ?? (object)DBNull.Value),
-                    new SqlParameter("@Address", p.Address ?? (object)DBNull.Value),
-                    new SqlParameter("@Email", p.Email ?? (object)DBNull.Value));
+                var result = _db.ExecuteScalarSP("usp_tblPatients_Create", PatientParameters(p));
 
                 return result == null ? 0 : Convert.ToInt32(result);
             }
@@ -58,14 +51,7 @@ namespace BusinessLogic
         {
             PatientValidator.Validate(p);
             var result = _db.QuerySP("usp_tblPatients_Update",
-                new SqlParameter("@PatientID", p.PatientID),
-                new SqlParameter("@FirstName", p.FirstName ?? (object)DBNull.Value),
-                new SqlParameter("@LastName", p.LastName ?? (object)DBNull.Value),
-                new SqlParameter("@DateOfBirth", p.DateOfBirth ?? (object)DBNull.Value),
-                new SqlParameter("@Gender", p.Gender ?? (object)DBNull.Value),
-                new SqlParameter("@ContactNumber", p.ContactNumber ?? (object)DBNull.Value),
-                new SqlParameter("@Address", p.Address ?? (object)DBNull.Value),
-                new SqlParameter("@Email", p.Email ?? (object)DBNull.Value));
+                PatientParameters(p).Prepend(new SqlParameter("@PatientID", p.PatientID)).ToArray());
 
             return result.Rows.Count > 0 ? Convert.ToInt32(result.Rows[0]["AffectedRows"]) : 0;
         }
@@ -77,6 +63,32 @@ namespace BusinessLogic
 
             return result.Rows.Count > 0 ? Convert.ToInt32(result.Rows[0]["AffectedRows"]) : 0;
         }
+
+        /// <summary>Patients that were deactivated (soft-deleted). Optional search text.</summary>
+        public DataTable GetDeleted(string? searchTerm = null) =>
+            _db.QuerySP("usp_tblPatients_GetDeleted",
+                new SqlParameter("@SearchTerm", searchTerm ?? ""));
+
+        /// <summary>Brings a deactivated patient back. Returns 0 if the patient wasn't deactivated.</summary>
+        public int Restore(int id)
+        {
+            var result = _db.QuerySP("usp_tblPatients_Restore",
+                new SqlParameter("@PatientID", id));
+
+            return result.Rows.Count > 0 ? Convert.ToInt32(result.Rows[0]["AffectedRows"]) : 0;
+        }
+
+        // The seven editable columns, in the order the stored procedures expect them.
+        private static SqlParameter[] PatientParameters(Patient p) => new[]
+        {
+            new SqlParameter("@FirstName", p.FirstName ?? (object)DBNull.Value),
+            new SqlParameter("@LastName", p.LastName ?? (object)DBNull.Value),
+            new SqlParameter("@DateOfBirth", p.DateOfBirth ?? (object)DBNull.Value),
+            new SqlParameter("@Gender", p.Gender ?? (object)DBNull.Value),
+            new SqlParameter("@ContactNumber", p.ContactNumber ?? (object)DBNull.Value),
+            new SqlParameter("@Address", p.Address ?? (object)DBNull.Value),
+            new SqlParameter("@Email", p.Email ?? (object)DBNull.Value)
+        };
 
         private static Patient Map(DataRow row) => new Patient
         {

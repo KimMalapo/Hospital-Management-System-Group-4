@@ -2,6 +2,7 @@ using BusinessLogic;
 
 namespace UI
 {
+    /// <summary>Starts the app: checks the database, then shows the login window.</summary>
     internal static class Program
     {
         /// <summary>

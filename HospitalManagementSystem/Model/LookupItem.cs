@@ -1,7 +1,6 @@
-using System;
-
 namespace Model
 {
+    /// <summary>One row of a lookup list (department, diagnosis code...).</summary>
     public class LookupItem
     {
         public int Id { get; set; }

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
 namespace UI
 {
+    /// <summary>Small helpers shared by the screens (switch view, check fields, message boxes).</summary>
     public static class UIHelper
     {
         public static void ShowView<T>(Panel host) where T : UserControl, new()
@@ -59,15 +57,10 @@ namespace UI
         /// </summary>
         public static bool ValidateFields(Dictionary<string, string> fields, out string errorMessage)
         {
-            var missingFields = new List<string>();
-
-            foreach (var field in fields)
-            {
-                if (string.IsNullOrWhiteSpace(field.Value))
-                {
-                    missingFields.Add($"• {field.Key}");
-                }
-            }
+            var missingFields = fields
+                .Where(field => string.IsNullOrWhiteSpace(field.Value))
+                .Select(field => $"• {field.Key}")
+                .ToList();
 
             if (missingFields.Count > 0)
             {
@@ -86,17 +79,51 @@ namespace UI
         {
             BusinessLogic.Logger.Error($"UIHelper: Error {actionName}", ex);
 
-            if (ex is SqlException sqlEx)
+            // Common SQL Server error codes for server down, network failure, or timeout
+            if (ex is SqlException sqlEx && (sqlEx.Number is 53 or 20 or -2 || sqlEx.Class >= 20))
             {
-                // Common SQL Server error codes for server down, network failure, or timeout
-                if (sqlEx.Number == 53 || sqlEx.Number == 20 || sqlEx.Number == -2 || sqlEx.Class >= 20)
-                {
-                    MessageBox.Show("Database is unreachable. Please verify that your SQL Server is running and your connection string is correct.", "Database Unreachable", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                ShowError("Database is unreachable. Please verify that your SQL Server is running and your connection string is correct.", "Database Unreachable");
+                return;
             }
 
-            MessageBox.Show($"An error occurred while {actionName}: {ex.Message}", "Database Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ShowError($"An error occurred while {actionName}: {ex.Message}", "Database Error");
         }
+
+        /// <summary>Shows a service error: rule and permission messages as a warning, anything else as a database error.</summary>
+        public static void ShowServiceError(IWin32Window owner, Exception ex, string actionName)
+        {
+            if (ex is BusinessLogic.ValidationException or UnauthorizedAccessException or InvalidOperationException)
+                ShowWarning(owner, ex.Message, "Cannot " + actionName);
+            else
+                HandleDatabaseError(ex, actionName);
+        }
+
+        /// <summary>Asks the user for a line of text (like a void reason). Returns an empty string if they cancel.</summary>
+        public static string AskText(string prompt, string title) =>
+            Microsoft.VisualBasic.Interaction.InputBox(prompt, title, "").Trim();
+
+        /// <summary>Age in whole years on today's date.</summary>
+        public static int CalculateAge(DateTime dateOfBirth)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - dateOfBirth.Year;
+            if (dateOfBirth.Date > today.AddYears(-age)) age--;
+            return age;
+        }
+
+        public static void ShowInfo(string message, string title) =>
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        public static void ShowInfo(IWin32Window owner, string message, string title) =>
+            MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        public static void ShowWarning(string message, string title) =>
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+        public static void ShowWarning(IWin32Window owner, string message, string title) =>
+            MessageBox.Show(owner, message, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+        public static void ShowError(string message, string title) =>
+            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }

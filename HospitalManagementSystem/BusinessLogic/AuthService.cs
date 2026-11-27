@@ -6,9 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BusinessLogic
 {
-    // REPLACES the existing BusinessLogic/AuthService.cs.
-    // Changes: clear start-up message when HMS_JWT_SECRET is missing/short, IsConfigured check for Program.cs,
-    // and ValidateToken(token, out expired) so the UI can tell "session expired" from "invalid token".
+    /// <summary>Creates and validates the sign-in token (JWT). Needs the HMS_JWT_SECRET environment variable.</summary>
     public class AuthService
     {
         public const string SecretVariable = "HMS_JWT_SECRET";

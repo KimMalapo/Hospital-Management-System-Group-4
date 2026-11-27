@@ -147,3 +147,48 @@ BEGIN
         THROW;
     END CATCH
 END
+
+GO
+
+-- Deactivated (soft-deleted) patients, newest change first. Optional search by name, phone, email or ID.
+CREATE PROCEDURE dbo.usp_tblPatients_GetDeleted
+    @SearchTerm NVARCHAR(200) = N''
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @SearchTerm = ISNULL(@SearchTerm, N'');
+    SELECT PatientID, FirstName, LastName, DateOfBirth, Gender,
+           ContactNumber, Address, Email, IsActive, CreatedAt, UpdatedAt
+    FROM   dbo.tblPatients
+    WHERE  IsActive = 0
+      AND  (
+            FirstName      LIKE N'%' + @SearchTerm + N'%'
+         OR LastName       LIKE N'%' + @SearchTerm + N'%'
+         OR ContactNumber  LIKE N'%' + @SearchTerm + N'%'
+         OR Email          LIKE N'%' + @SearchTerm + N'%'
+         OR CAST(PatientID AS NVARCHAR(20)) = @SearchTerm
+          )
+    ORDER BY UpdatedAt DESC, LastName, FirstName;
+END
+GO
+
+-- Brings a deactivated patient back. Returns the number of rows changed (0 when the patient is not deactivated).
+CREATE PROCEDURE dbo.usp_tblPatients_Restore
+    @PatientID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE dbo.tblPatients
+        SET    IsActive  = 1,
+               UpdatedAt = SYSUTCDATETIME()
+        WHERE  PatientID = @PatientID
+          AND  IsActive  = 0;
+
+        SELECT @@ROWCOUNT AS AffectedRows;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
+END
+GO
