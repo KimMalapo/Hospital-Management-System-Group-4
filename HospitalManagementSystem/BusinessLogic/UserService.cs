@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace BusinessLogic
 {
+    /// <summary>User accounts: login and register.</summary>
     public class UserService
     {
         private readonly DbExecutor _db;

@@ -71,7 +71,8 @@
             btnAdd = new Button();
             btnUpdate = new Button();
             btnDelete = new Button();
-            btnViewDischargeRecord = new Button();
+            btnRestore = new Button();
+            chkShowDeleted = new CheckBox();
             pnlMainHandler.SuspendLayout();
             grpPatientDetails.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numAge).BeginInit();
@@ -89,7 +90,7 @@
             pnlMainHandler.Controls.Add(btnAdd);
             pnlMainHandler.Controls.Add(btnUpdate);
             pnlMainHandler.Controls.Add(btnDelete);
-            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
+            pnlMainHandler.Controls.Add(btnRestore);
             pnlMainHandler.Location = new Point(1, 2);
             pnlMainHandler.Name = "pnlMainHandler";
             pnlMainHandler.Size = new Size(1490, 970);
@@ -364,6 +365,7 @@
             // grpList
             // 
             grpList.BackColor = Color.WhiteSmoke;
+            grpList.Controls.Add(chkShowDeleted);
             grpList.Controls.Add(txtSearch);
             grpList.Controls.Add(lblSearch);
             grpList.Controls.Add(dgvPatients);
@@ -500,18 +502,30 @@
             btnDelete.UseVisualStyleBackColor = false;
             btnDelete.Click += btnDelete_Click;
             // 
-            // btnViewDischargeRecord
+            // btnRestore
             // 
-            btnViewDischargeRecord.BackColor = Color.LightSteelBlue;
-            btnViewDischargeRecord.Enabled = false;
-            btnViewDischargeRecord.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
-            btnViewDischargeRecord.Location = new Point(830, 855);
-            btnViewDischargeRecord.Name = "btnViewDischargeRecord";
-            btnViewDischargeRecord.Size = new Size(280, 60);
-            btnViewDischargeRecord.TabIndex = 6;
-            btnViewDischargeRecord.Text = "View Final Record";
-            btnViewDischargeRecord.UseVisualStyleBackColor = false;
-            btnViewDischargeRecord.Click += btnViewDischargeRecord_Click;
+            btnRestore.BackColor = Color.Honeydew;
+            btnRestore.Enabled = false;
+            btnRestore.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
+            btnRestore.Location = new Point(830, 855);
+            btnRestore.Name = "btnRestore";
+            btnRestore.Size = new Size(250, 60);
+            btnRestore.TabIndex = 6;
+            btnRestore.Text = "Restore Patient";
+            btnRestore.UseVisualStyleBackColor = false;
+            btnRestore.Click += btnRestore_Click;
+            // 
+            // chkShowDeleted
+            // 
+            chkShowDeleted.AutoSize = true;
+            chkShowDeleted.Font = new Font("Yu Gothic", 11F);
+            chkShowDeleted.Location = new Point(20, 38);
+            chkShowDeleted.Name = "chkShowDeleted";
+            chkShowDeleted.Size = new Size(200, 24);
+            chkShowDeleted.TabIndex = 2;
+            chkShowDeleted.Text = "Show deactivated patients";
+            chkShowDeleted.UseVisualStyleBackColor = true;
+            chkShowDeleted.CheckedChanged += chkShowDeleted_CheckedChanged;
             // 
             // PatientMaintenanceUserControl
             // 
@@ -578,6 +592,7 @@
         private Button btnAdd;
         private Button btnUpdate;
         private Button btnDelete;
-        private Button btnViewDischargeRecord;
+        private Button btnRestore;
+        private CheckBox chkShowDeleted;
     }
 }

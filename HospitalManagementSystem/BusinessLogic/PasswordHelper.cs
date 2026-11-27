@@ -2,6 +2,7 @@
 
 namespace BusinessLogic
 {
+    /// <summary>Hashes and checks passwords. We never store the real one.</summary>
     public static class PasswordHelper
     {
         public static string Hash(string password)

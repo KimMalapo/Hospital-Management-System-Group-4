@@ -6,6 +6,7 @@ using Model;
 
 namespace BusinessLogic
 {
+    /// <summary>What a lookup table needs from the database. Lets tests use a fake one.</summary>
     public interface ILookupRepository
     {
         List<LookupItem> GetList(string table);
@@ -18,6 +19,7 @@ namespace BusinessLogic
         List<LookupItem> Search(string table, string term);
     }
 
+    /// <summary>Reads and writes the lookup tables in the database.</summary>
     public class LookupRepository : ILookupRepository
     {
         private readonly string _cs;
@@ -27,11 +29,14 @@ namespace BusinessLogic
             _cs = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         }
 
+        private static SqlCommand Procedure(SqlConnection conn, string table, string action) =>
+            new($"usp_{table}_{action}", conn) { CommandType = CommandType.StoredProcedure };
+
         public List<LookupItem> GetList(string table)
         {
             var list = new List<LookupItem>();
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_Get", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "Get");
             conn.Open();
             using var r = cmd.ExecuteReader();
             while (r.Read())
@@ -42,7 +47,7 @@ namespace BusinessLogic
         public LookupItem? GetById(string table, int id)
         {
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_GetById", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "GetById");
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
             using var r = cmd.ExecuteReader();
@@ -52,7 +57,7 @@ namespace BusinessLogic
         public bool CodeExists(string table, string code)
         {
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_CheckCodeExists", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "CheckCodeExists");
             cmd.Parameters.AddWithValue("@Code", code);
             conn.Open();
             var result = cmd.ExecuteScalar();
@@ -62,7 +67,7 @@ namespace BusinessLogic
         public int Create(string table, LookupItem item)
         {
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_Create", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "Create");
             cmd.Parameters.AddWithValue("@Code", (object?)item.Code ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Name", (object?)item.Name ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", (object?)item.Status ?? "Active");
@@ -75,7 +80,7 @@ namespace BusinessLogic
         public int Update(string table, LookupItem item)
         {
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_Update", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "Update");
             cmd.Parameters.AddWithValue("@Id", item.Id);
             cmd.Parameters.AddWithValue("@Name", (object?)item.Name ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@Status", (object?)item.Status ?? DBNull.Value);
@@ -101,7 +106,7 @@ namespace BusinessLogic
         public int SoftDelete(string table, int id)
         {
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_SoftDelete", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "SoftDelete");
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
             return cmd.ExecuteNonQuery();
@@ -111,7 +116,7 @@ namespace BusinessLogic
         {
             var list = new List<LookupItem>();
             using var conn = new SqlConnection(_cs);
-            using var cmd = new SqlCommand($"usp_{table}_Search", conn) { CommandType = CommandType.StoredProcedure };
+            using var cmd = Procedure(conn, table, "Search");
             cmd.Parameters.AddWithValue("@SearchTerm", term);
             conn.Open();
             using var r = cmd.ExecuteReader();
@@ -119,29 +124,24 @@ namespace BusinessLogic
             return list;
         }
 
-        private static LookupItem Map(SqlDataReader r)
+        private static LookupItem Map(SqlDataReader r) => new()
         {
-            return new LookupItem
-            {
-                Id = r.GetInt32(r.GetOrdinal("Id")),
-                Code = r["Code"] as string,
-                Name = r["Name"] as string,
-                Status = r["Status"] as string,
-                Notes = r["Notes"] as string,
-                IsDeleted = HasColumn(r, "IsDeleted") &&
-                            !r.IsDBNull(r.GetOrdinal("IsDeleted")) &&
-                            r.GetBoolean(r.GetOrdinal("IsDeleted"))
-            };
-        }
+            Id = r.GetInt32(r.GetOrdinal("Id")),
+            Code = r["Code"] as string,
+            Name = r["Name"] as string,
+            Status = r["Status"] as string,
+            Notes = r["Notes"] as string,
+            IsDeleted = HasColumn(r, "IsDeleted") &&
+                        !r.IsDBNull(r.GetOrdinal("IsDeleted")) &&
+                        r.GetBoolean(r.GetOrdinal("IsDeleted"))
+        };
 
         /// <summary>True when the current result set has a column with this name (not just a schema description).</summary>
         private static bool HasColumn(SqlDataReader r, string name)
         {
             for (var i = 0; i < r.FieldCount; i++)
-            {
                 if (string.Equals(r.GetName(i), name, StringComparison.OrdinalIgnoreCase))
                     return true;
-            }
             return false;
         }
     }

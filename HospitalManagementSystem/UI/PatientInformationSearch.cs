@@ -1,11 +1,9 @@
-﻿using System;
-using System.Data;
-using System.Drawing;
-using System.Windows.Forms;
+﻿using System.Data;
 using BusinessLogic;
 
 namespace UI
 {
+    /// <summary>Old patient search window. Nothing opens it now.</summary>
     public partial class PatientInformationSearch : Form
     {
         private readonly PatientService? _service;
@@ -19,18 +17,15 @@ namespace UI
             btnSearch.Click += BtnSearch_Click;
         }
 
-        public DataTable SearchPatients(string searchTerm)
-        {
-            return _service?.GetPatients(searchTerm)
+        public DataTable SearchPatients(string searchTerm) =>
+            _service?.GetPatients(searchTerm)
                 ?? throw new InvalidOperationException("The patient database service is not configured.");
-        }
 
         private void BtnSearch_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
             {
-                MessageBox.Show(this, "Enter a patient ID, name, or contact number to search.",
-                    "Search required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning(this, "Enter a patient ID, name, or contact number to search.", "Search required");
                 txtSearch.Focus();
                 return;
             }
@@ -41,35 +36,29 @@ namespace UI
                 if (results.Rows.Count == 0)
                 {
                     ClearPatientDetails();
-                    MessageBox.Show("No matching patient was found.", "Search", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo("No matching patient was found.", "Search");
                     return;
                 }
 
-                var patient = results.Rows[0];
-                lblPateintID.Text = Convert.ToString(patient["PatientID"]);
-                lblName.Text = $"{patient["FirstName"]} {patient["LastName"]}";
-                lblGender.Text = patient.IsNull("Gender") ? "N/A" : Convert.ToString(patient["Gender"]);
-                lblContact.Text = patient.IsNull("ContactNumber") ? "N/A" : Convert.ToString(patient["ContactNumber"]);
-
-                if (patient.IsNull("DateOfBirth"))
-                {
-                    lblAge.Text = "N/A";
-                }
-                else
-                {
-                    var dateOfBirth = Convert.ToDateTime(patient["DateOfBirth"]);
-                    var age = DateTime.Today.Year - dateOfBirth.Year;
-                    if (dateOfBirth.Date > DateTime.Today.AddYears(-age)) age--;
-                    lblAge.Text = age.ToString();
-                }
+                ShowPatientDetails(results.Rows[0]);
             }
             catch (Exception ex)
             {
                 Logger.Error("PatientInformationSearch.SearchPatients failed", ex);
                 ClearPatientDetails();
-                MessageBox.Show("Unable to search patients. Check the database connection and try again.",
-                    "Database error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Unable to search patients. Check the database connection and try again.", "Database error");
             }
+        }
+
+        private void ShowPatientDetails(DataRow patient)
+        {
+            lblPateintID.Text = Convert.ToString(patient["PatientID"]);
+            lblName.Text = $"{patient["FirstName"]} {patient["LastName"]}";
+            lblGender.Text = patient.IsNull("Gender") ? "N/A" : Convert.ToString(patient["Gender"]);
+            lblContact.Text = patient.IsNull("ContactNumber") ? "N/A" : Convert.ToString(patient["ContactNumber"]);
+            lblAge.Text = patient.IsNull("DateOfBirth")
+                ? "N/A"
+                : UIHelper.CalculateAge(Convert.ToDateTime(patient["DateOfBirth"])).ToString();
         }
 
         private void ClearPatientDetails()

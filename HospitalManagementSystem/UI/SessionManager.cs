@@ -3,8 +3,7 @@ using BusinessLogic;
 
 namespace UI
 {
-    // REPLACES the existing UI/SessionManager.cs.
-    // Changes: keeps BusinessLogic.CurrentUser in sync (so services know who is logged in),
+    // Keeps BusinessLogic.CurrentUser in sync (so services know who is logged in),
     // clears everything on Logout, and raises SessionExpired when the token has expired.
     public static class SessionManager
     {

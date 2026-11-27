@@ -3,6 +3,7 @@ using Model;
 
 namespace BusinessLogic
 {
+    /// <summary>Diagnosis codes like A00. Just uses LookupService.</summary>
     public class DiagnosisCodeService
     {
         private readonly LookupService _lookupService;

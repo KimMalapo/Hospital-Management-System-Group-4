@@ -6,6 +6,7 @@ using Model;
 
 namespace UI;
 
+/// <summary>Admit Patient screen. Controls are made in code.</summary>
 public sealed class AdmissionUserControl : UserControl
 {
     private readonly ErrorProvider _errors = new();
@@ -26,6 +27,8 @@ public sealed class AdmissionUserControl : UserControl
     private AdmissionService? _admissionService;
     private int? _selectedPatientId;
     private bool _loadingPatients;
+
+    private const string NoPatientSelectedText = "No patient selected";
 
     public event EventHandler<AdmissionCreatedEventArgs>? AdmissionCreated;
 
@@ -99,22 +102,10 @@ public sealed class AdmissionUserControl : UserControl
         };
         heading.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         heading.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        heading.Controls.Add(new Label
-        {
-            Text = "Admit a patient",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 20, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 41, 59),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 0);
-        heading.Controls.Add(new Label
-        {
-            Text = "Choose a registered patient, assign a room, and record the admission details.",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9.5F),
-            ForeColor = Color.FromArgb(100, 116, 139),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 1);
+        heading.Controls.Add(CreateLabel("Admit a patient", new Font("Segoe UI", 20, FontStyle.Bold),
+            Color.FromArgb(30, 41, 59), ContentAlignment.MiddleLeft), 0, 0);
+        heading.Controls.Add(CreateLabel("Choose a registered patient, assign a room, and record the admission details.",
+            new Font("Segoe UI", 9.5F), Color.FromArgb(100, 116, 139), ContentAlignment.MiddleLeft), 0, 1);
         root.Controls.Add(heading, 0, 0);
 
         var content = new TableLayoutPanel
@@ -129,14 +120,7 @@ public sealed class AdmissionUserControl : UserControl
         content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
         root.Controls.Add(content, 0, 1);
 
-        var patientGroup = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(18),
-            Margin = Padding.Empty
-        };
+        var patientGroup = CreateCard();
         var patientLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -150,15 +134,8 @@ public sealed class AdmissionUserControl : UserControl
         patientLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         patientLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
         patientLayout.Controls.Add(CreateSectionHeading("01", "Select patient", "Search by patient ID or name"), 0, 0);
-        patientLayout.Controls.Add(new Label
-        {
-            Text = "Patient search",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            ForeColor = Color.FromArgb(71, 85, 105),
-            TextAlign = ContentAlignment.BottomLeft,
-            Margin = new Padding(0, 3, 0, 2)
-        }, 0, 1);
+        patientLayout.Controls.Add(CreateLabel("Patient search", new Font("Segoe UI", 9, FontStyle.Bold),
+            Color.FromArgb(71, 85, 105), ContentAlignment.BottomLeft, new Padding(0, 3, 0, 2)), 0, 1);
         _patientSearch.Dock = DockStyle.Fill;
         _patientSearch.Font = new Font("Segoe UI", 10);
         _patientSearch.PlaceholderText = "Enter patient ID or name";
@@ -166,7 +143,7 @@ public sealed class AdmissionUserControl : UserControl
         patientLayout.Controls.Add(_patientSearch, 0, 2);
         ConfigurePatientsGrid();
         patientLayout.Controls.Add(_patientsGrid, 0, 3);
-        _selectedPatient.Text = "No patient selected";
+        _selectedPatient.Text = NoPatientSelectedText;
         _selectedPatient.Dock = DockStyle.Fill;
         _selectedPatient.TextAlign = ContentAlignment.MiddleLeft;
         _selectedPatient.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
@@ -177,14 +154,7 @@ public sealed class AdmissionUserControl : UserControl
         patientLayout.Controls.Add(_selectedPatient, 0, 4);
         patientGroup.Controls.Add(patientLayout);
 
-        var detailsGroup = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(18),
-            Margin = Padding.Empty
-        };
+        var detailsGroup = CreateCard();
         var details = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -204,8 +174,9 @@ public sealed class AdmissionUserControl : UserControl
         details.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
         details.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        details.Controls.Add(CreateSectionHeading("02", "Admission details", "Required fields are marked with an asterisk"), 0, 0);
-        details.SetColumnSpan(details.GetControlFromPosition(0, 0)!, 2);
+        var detailsHeading = CreateSectionHeading("02", "Admission details", "Required fields are marked with an asterisk");
+        details.Controls.Add(detailsHeading, 0, 0);
+        details.SetColumnSpan(detailsHeading, 2);
 
         ConfigureLookupCombo(_rooms);
         ConfigureLookupCombo(_departments);
@@ -303,35 +274,15 @@ public sealed class AdmissionUserControl : UserControl
         heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         heading.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
         heading.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        heading.Controls.Add(new Label
-        {
-            Text = step,
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(239, 246, 255),
-            ForeColor = Color.FromArgb(37, 99, 235),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 8, 0)
-        }, 0, 0);
-        heading.SetRowSpan(heading.GetControlFromPosition(0, 0)!, 2);
-        heading.Controls.Add(new Label
-        {
-            Text = title,
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 11, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 41, 59),
-            TextAlign = ContentAlignment.MiddleLeft,
-            Margin = Padding.Empty
-        }, 1, 0);
-        heading.Controls.Add(new Label
-        {
-            Text = description,
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 8.5F),
-            ForeColor = Color.FromArgb(100, 116, 139),
-            TextAlign = ContentAlignment.MiddleLeft,
-            Margin = Padding.Empty
-        }, 1, 1);
+        var stepBadge = CreateLabel(step, new Font("Segoe UI", 9, FontStyle.Bold),
+            Color.FromArgb(37, 99, 235), ContentAlignment.MiddleCenter, new Padding(0, 0, 8, 0));
+        stepBadge.BackColor = Color.FromArgb(239, 246, 255);
+        heading.Controls.Add(stepBadge, 0, 0);
+        heading.SetRowSpan(stepBadge, 2);
+        heading.Controls.Add(CreateLabel(title, new Font("Segoe UI", 11, FontStyle.Bold),
+            Color.FromArgb(30, 41, 59), ContentAlignment.MiddleLeft, Padding.Empty), 1, 0);
+        heading.Controls.Add(CreateLabel(description, new Font("Segoe UI", 8.5F),
+            Color.FromArgb(100, 116, 139), ContentAlignment.MiddleLeft, Padding.Empty), 1, 1);
         return heading;
     }
 
@@ -378,18 +329,33 @@ public sealed class AdmissionUserControl : UserControl
 
     private static void AddField(TableLayoutPanel layout, int row, string label, Control input)
     {
-        layout.Controls.Add(new Label
-        {
-            Text = label,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            ForeColor = Color.FromArgb(71, 85, 105),
-            Margin = new Padding(0, 4, 8, 4)
-        }, 0, row);
-        input.Margin = input.Margin == Padding.Empty ? new Padding(3, 8, 3, 8) : input.Margin;
+        layout.Controls.Add(CreateLabel(label, new Font("Segoe UI", 9, FontStyle.Bold),
+            Color.FromArgb(71, 85, 105), ContentAlignment.MiddleLeft, new Padding(0, 4, 8, 4)), 0, row);
         layout.Controls.Add(input, 1, row);
     }
+
+    private static Label CreateLabel(string text, Font font, Color foreColor, ContentAlignment textAlign, Padding? margin = null)
+    {
+        var label = new Label
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            Font = font,
+            ForeColor = foreColor,
+            TextAlign = textAlign
+        };
+        if (margin.HasValue) label.Margin = margin.Value;
+        return label;
+    }
+
+    private static Panel CreateCard() => new()
+    {
+        Dock = DockStyle.Fill,
+        BackColor = Color.White,
+        BorderStyle = BorderStyle.FixedSingle,
+        Padding = new Padding(18),
+        Margin = Padding.Empty
+    };
 
     private void AdmissionUserControl_Load(object? sender, EventArgs e)
     {
@@ -481,15 +447,28 @@ public sealed class AdmissionUserControl : UserControl
         {
             _loadingPatients = true;
             _selectedPatientId = null;
-            _selectedPatient.Text = "No patient selected";
+            _selectedPatient.Text = NoPatientSelectedText;
             var source = _patientService.GetPatients(searchTerm);
+
+            // Patients who are already admitted can't be admitted again, so leave them out of the list.
+            var admittedIds = _admissionService == null
+                ? new HashSet<int>()
+                : _admissionService.GetActive().AsEnumerable().Select(r => Convert.ToInt32(r["PatientID"])).ToHashSet();
+
             var patients = new DataTable();
             patients.Columns.Add("PatientID", typeof(int));
             patients.Columns.Add("PatientName", typeof(string));
             patients.Columns.Add("Age", typeof(string));
 
+            var hiddenCount = 0;
             foreach (DataRow row in source.Rows)
             {
+                if (admittedIds.Contains(Convert.ToInt32(row["PatientID"])))
+                {
+                    hiddenCount++;
+                    continue;
+                }
+
                 var dateOfBirth = row["DateOfBirth"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["DateOfBirth"]);
                 var age = dateOfBirth.HasValue ? CalculateAge(dateOfBirth.Value).ToString() : "N/A";
                 patients.Rows.Add(Convert.ToInt32(row["PatientID"]),
@@ -498,7 +477,9 @@ public sealed class AdmissionUserControl : UserControl
 
             _patientsGrid.DataSource = patients;
             _patientsGrid.ClearSelection();
-            _status.Text = patients.Rows.Count == 0 ? "No registered patients match this search." : string.Empty;
+            _status.Text = patients.Rows.Count > 0 ? string.Empty
+                : hiddenCount > 0 ? "The matching patients are already admitted."
+                : "No registered patients match this search.";
         }
         catch (Exception ex)
         {
@@ -546,14 +527,12 @@ public sealed class AdmissionUserControl : UserControl
         }
         catch (ValidationException ex)
         {
-            _status.ForeColor = Color.Firebrick;
             _status.Text = ex.Message;
             SetValidationError(ex.Field, ex.Message);
         }
         catch (Exception ex)
         {
             Logger.Error("AdmissionUserControl.Admit failed", ex);
-            _status.ForeColor = Color.Firebrick;
             _status.Text = "The admission could not be saved. Check the details and try again.";
         }
     }
@@ -562,46 +541,21 @@ public sealed class AdmissionUserControl : UserControl
     {
         _errors.Clear();
         var valid = true;
-        if (_selectedPatientId is null)
+
+        void Reject(Control control, string message)
         {
-            _errors.SetError(_patientsGrid, "Select a registered patient.");
-            valid = false;
-        }
-        if (_rooms.SelectedValue is not string)
-        {
-            _errors.SetError(_rooms, "Select an available room.");
-            valid = false;
-        }
-        if (_departments.SelectedValue is not string)
-        {
-            _errors.SetError(_departments, "Select a department.");
-            valid = false;
-        }
-        if (_diagnoses.SelectedValue is not string)
-        {
-            _errors.SetError(_diagnoses, "Select a diagnosis.");
-            valid = false;
-        }
-        if (string.IsNullOrWhiteSpace(_physician.Text))
-        {
-            _errors.SetError(_physician, "Enter the attending physician.");
-            valid = false;
-        }
-        if (_admitDate.Value > DateTime.Now.AddMinutes(5))
-        {
-            _errors.SetError(_admitDate, "The admit date cannot be in the future.");
+            _errors.SetError(control, message);
             valid = false;
         }
 
-        if (!valid)
-        {
-            _status.ForeColor = Color.Firebrick;
-            _status.Text = "Complete the required fields marked with an error.";
-        }
-        else
-        {
-            _status.Text = string.Empty;
-        }
+        if (_selectedPatientId is null) Reject(_patientsGrid, "Select a registered patient.");
+        if (_rooms.SelectedValue is not string) Reject(_rooms, "Select an available room.");
+        if (_departments.SelectedValue is not string) Reject(_departments, "Select a department.");
+        if (_diagnoses.SelectedValue is not string) Reject(_diagnoses, "Select a diagnosis.");
+        if (string.IsNullOrWhiteSpace(_physician.Text)) Reject(_physician, "Enter the attending physician.");
+        if (_admitDate.Value > DateTime.Now.AddMinutes(5)) Reject(_admitDate, "The admit date cannot be in the future.");
+
+        _status.Text = valid ? string.Empty : "Complete the required fields marked with an error.";
         return valid;
     }
 
@@ -628,7 +582,7 @@ public sealed class AdmissionUserControl : UserControl
         _patientSearch.Clear();
         _patientsGrid.ClearSelection();
         _selectedPatientId = null;
-        _selectedPatient.Text = "No patient selected";
+        _selectedPatient.Text = NoPatientSelectedText;
         _rooms.SelectedIndex = -1;
         _departments.SelectedIndex = -1;
         _diagnoses.SelectedIndex = -1;
@@ -658,6 +612,7 @@ public sealed class AdmissionUserControl : UserControl
     }
 }
 
+/// <summary>Says a patient was just admitted.</summary>
 public sealed class AdmissionCreatedEventArgs(int admissionId, string admissionNo) : EventArgs
 {
     public int AdmissionId { get; } = admissionId;

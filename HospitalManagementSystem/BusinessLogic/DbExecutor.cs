@@ -3,9 +3,7 @@ using Microsoft.Data.SqlClient;
 
 namespace BusinessLogic
 {
-    // REPLACES the existing BusinessLogic/DbExecutor.cs.
-    // Change: every connection tells SQL Server who the app user is (SESSION_CONTEXT 'AppUser'),
-    // so audit triggers can record the real person instead of the SQL login (needs the DB-06 trigger change).
+    /// <summary>Runs SQL and stored procedures; every connection tells SQL Server who the app user is, so audit triggers record the real person.</summary>
     public class DbExecutor
     {
         private readonly string _connectionString;
@@ -80,61 +78,37 @@ namespace BusinessLogic
             return dt;
         }
 
-        public DataTable Query(string sql, params SqlParameter[] parameters)
+        // One place that opens the connection, builds the command and runs it.
+        private T Run<T>(string text, CommandType type, SqlParameter[] parameters, Func<SqlCommand, T> execute)
         {
             using var conn = OpenConnection();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.CommandType = CommandType.Text;
+            cmd.CommandText = text;
+            cmd.CommandType = type;
             if (parameters != null)
                 foreach (var p in parameters) cmd.Parameters.Add(p);
+            return execute(cmd);
+        }
+
+        private static DataTable ReadTable(SqlCommand cmd)
+        {
             using var reader = cmd.ExecuteReader();
             return LoadTable(reader);
         }
 
-        public DataTable QuerySP(string storedProc, params SqlParameter[] parameters)
-        {
-            using var conn = OpenConnection();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = storedProc;
-            cmd.CommandType = CommandType.StoredProcedure;
-            if (parameters != null)
-                foreach (var p in parameters) cmd.Parameters.Add(p);
-            using var reader = cmd.ExecuteReader();
-            return LoadTable(reader);
-        }
+        public DataTable Query(string sql, params SqlParameter[] parameters) =>
+            Run(sql, CommandType.Text, parameters, ReadTable);
 
-        public int Execute(string sql, params SqlParameter[] parameters)
-        {
-            using var conn = OpenConnection();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-            cmd.CommandType = CommandType.Text;
-            if (parameters != null)
-                foreach (var p in parameters) cmd.Parameters.Add(p);
-            return cmd.ExecuteNonQuery();
-        }
+        public DataTable QuerySP(string storedProc, params SqlParameter[] parameters) =>
+            Run(storedProc, CommandType.StoredProcedure, parameters, ReadTable);
 
-        public int ExecuteSP(string storedProc, params SqlParameter[] parameters)
-        {
-            using var conn = OpenConnection();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = storedProc;
-            cmd.CommandType = CommandType.StoredProcedure;
-            if (parameters != null)
-                foreach (var p in parameters) cmd.Parameters.Add(p);
-            return cmd.ExecuteNonQuery();
-        }
+        public int Execute(string sql, params SqlParameter[] parameters) =>
+            Run(sql, CommandType.Text, parameters, cmd => cmd.ExecuteNonQuery());
 
-        public object? ExecuteScalarSP(string storedProc, params SqlParameter[] parameters)
-        {
-            using var conn = OpenConnection();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = storedProc;
-            cmd.CommandType = CommandType.StoredProcedure;
-            if (parameters != null)
-                foreach (var p in parameters) cmd.Parameters.Add(p);
-            return cmd.ExecuteScalar();
-        }
+        public int ExecuteSP(string storedProc, params SqlParameter[] parameters) =>
+            Run(storedProc, CommandType.StoredProcedure, parameters, cmd => cmd.ExecuteNonQuery());
+
+        public object? ExecuteScalarSP(string storedProc, params SqlParameter[] parameters) =>
+            Run(storedProc, CommandType.StoredProcedure, parameters, cmd => cmd.ExecuteScalar());
     }
 }

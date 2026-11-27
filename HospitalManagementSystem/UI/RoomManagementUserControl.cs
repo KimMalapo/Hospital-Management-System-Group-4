@@ -1,10 +1,9 @@
-using System;
 using System.Data;
-using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
 
 namespace UI
 {
+    /// <summary>Room Management screen: see rooms and beds, add or update a room.</summary>
     public partial class RoomManagementUserControl : UserControl
     {
         private readonly NumericUpDown _capacity = new();
@@ -75,7 +74,7 @@ namespace UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to load rooms: {ex.Message}", "Room Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to load rooms: {ex.Message}", "Room Error");
             }
         }
 
@@ -85,7 +84,7 @@ namespace UI
         {
             if (string.IsNullOrWhiteSpace(txtRoomNo.Text) || cmbRoomType.SelectedValue is not string roomType)
             {
-                MessageBox.Show("Room number and room type are required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Room number and room type are required.", "Validation Error");
                 return;
             }
 
@@ -101,11 +100,11 @@ namespace UI
                     throw new InvalidOperationException("The room could not be created.");
                 LoadRoomData();
                 ClearForm();
-                MessageBox.Show("Room added.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo("Room added.", "Success");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to add room: {ex.Message}", "Room Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to add room: {ex.Message}", "Room Error");
             }
         }
 
@@ -113,65 +112,61 @@ namespace UI
         {
             if (dgvRooms.SelectedRows.Count == 0 || cmbRoomType.SelectedValue is not string roomType)
             {
-                MessageBox.Show("Select a room and room type before updating.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Select a room and room type before updating.", "Selection Required");
                 return;
             }
 
             try
             {
+                string roomNo = txtRoomNo.Text.Trim();
                 int updated = Convert.ToInt32(DbHelper.ExecuteScalar(
                     "EXEC dbo.usp_tblRooms_Update @RoomNo, @RoomType, @Rate, @Capacity",
-                    new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()),
+                    new SqlParameter("@RoomNo", roomNo),
                     new SqlParameter("@RoomType", roomType),
                     new SqlParameter("@Rate", numRate.Value),
                     new SqlParameter("@Capacity", decimal.ToInt32(_capacity.Value))));
                 if (updated == 0)
                     throw new InvalidOperationException("The selected room was not found or is inactive.");
-                if (cmbAvailability.SelectedItem is string status && status != "Occupied")
-                {
-                    int rows;
-                    if (status == "Available")
-                    {
-                        rows = DbHelper.Execute(
-                            @"UPDATE dbo.tblRooms
-                              SET Status = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
-                                                       WHERE RoomNo = @RoomNo AND DischargeDate IS NULL) >= Capacity
-                                                THEN N'Occupied' ELSE N'Available' END,
-                                  UpdatedAt = SYSUTCDATETIME()
-                              WHERE RoomNo = @RoomNo AND IsActive = 1;",
-                            new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()));
-                    }
-                    else
-                    {
-                        rows = DbHelper.Execute(
-                            @"UPDATE dbo.tblRooms
-                              SET Status = @Status, UpdatedAt = SYSUTCDATETIME()
-                              WHERE RoomNo = @RoomNo AND IsActive = 1
-                                AND NOT EXISTS
-                                (
-                                    SELECT 1 FROM dbo.tblRoomAssignments
-                                    WHERE RoomNo = @RoomNo AND DischargeDate IS NULL
-                                );",
-                            new SqlParameter("@Status", status),
-                            new SqlParameter("@RoomNo", txtRoomNo.Text.Trim()));
-                    }
-                    if (rows == 0)
-                        throw new InvalidOperationException("Room status cannot be changed while patients are admitted.");
-                }
+                if (cmbAvailability.SelectedItem is string status && status != "Occupied"
+                    && UpdateRoomStatus(roomNo, status) == 0)
+                    throw new InvalidOperationException("Room status cannot be changed while patients are admitted.");
                 LoadRoomData();
-                MessageBox.Show("Room updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo("Room updated.", "Success");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to update room: {ex.Message}", "Room Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to update room: {ex.Message}", "Room Error");
             }
         }
+
+        // Returns the number of rows changed; 0 means the room is occupied (or missing) and the status was left alone.
+        private static int UpdateRoomStatus(string roomNo, string status) =>
+            status == "Available"
+                ? DbHelper.Execute(
+                    @"UPDATE dbo.tblRooms
+                      SET Status = CASE WHEN (SELECT COUNT(*) FROM dbo.tblRoomAssignments
+                                               WHERE RoomNo = @RoomNo AND DischargeDate IS NULL) >= Capacity
+                                        THEN N'Occupied' ELSE N'Available' END,
+                          UpdatedAt = SYSUTCDATETIME()
+                      WHERE RoomNo = @RoomNo AND IsActive = 1;",
+                    new SqlParameter("@RoomNo", roomNo))
+                : DbHelper.Execute(
+                    @"UPDATE dbo.tblRooms
+                      SET Status = @Status, UpdatedAt = SYSUTCDATETIME()
+                      WHERE RoomNo = @RoomNo AND IsActive = 1
+                        AND NOT EXISTS
+                        (
+                            SELECT 1 FROM dbo.tblRoomAssignments
+                            WHERE RoomNo = @RoomNo AND DischargeDate IS NULL
+                        );",
+                    new SqlParameter("@Status", status),
+                    new SqlParameter("@RoomNo", roomNo));
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (dgvRooms.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a room to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Select a room to delete.", "Selection Required");
                 return;
             }
 
@@ -187,7 +182,7 @@ namespace UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to delete room: {ex.Message}", "Room Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to delete room: {ex.Message}", "Room Error");
             }
         }
 
@@ -230,20 +225,20 @@ namespace UI
             _capacity.Minimum = 1;
             _capacity.Maximum = 100;
             _capacity.Value = 1;
-            _capacity.Font = new System.Drawing.Font("Segoe UI", 10F);
-            _capacity.Location = new System.Drawing.Point(160, 360);
-            _capacity.Size = new System.Drawing.Size(290, 31);
+            _capacity.Font = new Font("Segoe UI", 10F);
+            _capacity.Location = new Point(160, 360);
+            _capacity.Size = new Size(290, 31);
             _capacity.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             var label = new Label
             {
                 Text = "Bed Capacity:",
                 AutoSize = true,
-                Location = new System.Drawing.Point(25, 365),
-                Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+                Location = new Point(25, 365),
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold)
             };
             grpRoomDetails.Controls.Add(label);
             grpRoomDetails.Controls.Add(_capacity);
-            btnClear.Location = new System.Drawing.Point(btnClear.Left, 415);
+            btnClear.Location = new Point(btnClear.Left, 415);
         }
     }
 }

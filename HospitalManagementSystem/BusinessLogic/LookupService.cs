@@ -4,6 +4,7 @@ using Model;
 
 namespace BusinessLogic
 {
+    /// <summary>Rules for the lookup lists: no duplicate codes, can't deactivate what's in use.</summary>
     public class LookupService
     {
         private readonly ILookupRepository _repo;

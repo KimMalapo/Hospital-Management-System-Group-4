@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
 using BusinessLogic;
 using Microsoft.Data.SqlClient;
 
@@ -73,7 +69,7 @@ namespace UI
             StartupError = message;
             Logger.Error("DbInitializer: " + message, new InvalidOperationException(message));
             if (show)
-                MessageBox.Show(message, "Database not ready", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError(message, "Database not ready");
             return false;
         }
 
@@ -96,23 +92,24 @@ namespace UI
 
         private static List<string> FindMissingObjects(string connectionString)
         {
-            var missing = new List<string>();
             using var conn = new SqlConnection(connectionString);
             conn.Open();
 
-            foreach (var t in RequiredTables)
+            var missing = FindMissing(conn, RequiredTables, "U");
+            missing.AddRange(FindMissing(conn, RequiredProcedures, "P"));
+            return missing;
+        }
+
+        // objectType is the OBJECT_ID type code: "U" for tables, "P" for stored procedures.
+        private static List<string> FindMissing(SqlConnection conn, IEnumerable<string> names, string objectType)
+        {
+            var missing = new List<string>();
+            foreach (var name in names)
             {
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT OBJECT_ID(@n, N'U')";
-                cmd.Parameters.AddWithValue("@n", "dbo." + t);
-                if (cmd.ExecuteScalar() is DBNull or null) missing.Add(t);
-            }
-            foreach (var p in RequiredProcedures)
-            {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT OBJECT_ID(@n, N'P')";
-                cmd.Parameters.AddWithValue("@n", "dbo." + p);
-                if (cmd.ExecuteScalar() is DBNull or null) missing.Add(p);
+                cmd.CommandText = $"SELECT OBJECT_ID(@n, N'{objectType}')";
+                cmd.Parameters.AddWithValue("@n", "dbo." + name);
+                if (cmd.ExecuteScalar() is DBNull or null) missing.Add(name);
             }
             return missing;
         }
@@ -161,8 +158,7 @@ namespace UI
                 {
                     var id = reader.GetInt32(0);
                     var pwd = reader.IsDBNull(1) ? null : reader.GetString(1);
-                    if (string.IsNullOrEmpty(pwd)) continue;
-                    if (pwd.StartsWith("$2")) continue; // already BCrypt
+                    if (string.IsNullOrEmpty(pwd) || pwd.StartsWith("$2")) continue; // empty, or already BCrypt
                     updates.Add((id, BCrypt.Net.BCrypt.HashPassword(pwd)));
                 }
                 reader.Close();

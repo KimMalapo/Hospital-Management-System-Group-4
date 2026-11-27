@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
-using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
+﻿using System.Data;
 using BusinessLogic;
 
 namespace UI
 {
+    /// <summary>Old room search window. Nothing opens it now.</summary>
     public partial class PatientRoomSearch : Form
     {
         private readonly RoomService? _service;

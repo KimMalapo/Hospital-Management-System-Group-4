@@ -1,5 +1,6 @@
 namespace Model;
 
+/// <summary>The bill for one admission.</summary>
 public class Bill
 {
     public int BillID { get; set; }
@@ -20,6 +21,7 @@ public class Bill
     public decimal Subtotal => RoomCharges + ServiceCharges;
 }
 
+/// <summary>One line on a bill.</summary>
 public class BillItem
 {
     public int BillItemID { get; set; }

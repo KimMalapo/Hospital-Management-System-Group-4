@@ -1,13 +1,16 @@
-using System;
 using System.Net.Mail;
-using System.Windows.Forms;
 using BusinessLogic;
 using Microsoft.Data.SqlClient;
 
 namespace UI
 {
+    /// <summary>Create Account window.</summary>
     public partial class RegisterForm : Form
     {
+        private static readonly Color SuccessColor = Color.FromArgb(22, 101, 52);
+        private static readonly Color ErrorColor = Color.FromArgb(185, 28, 28);
+        private static readonly Color HintColor = Color.FromArgb(100, 116, 139);
+
         public RegisterForm()
         {
             InitializeComponent();
@@ -20,9 +23,7 @@ namespace UI
         private void TxtPassword_TextChanged(object? sender, EventArgs e)
         {
             bool isStrong = PasswordHelper.IsStrongPassword(txtPassword.Text);
-            lblPasswordHelp.ForeColor = isStrong
-                ? System.Drawing.Color.FromArgb(22, 101, 52)
-                : System.Drawing.Color.FromArgb(100, 116, 139);
+            lblPasswordHelp.ForeColor = isStrong ? SuccessColor : HintColor;
             lblPasswordHelp.Text = isStrong
                 ? "Password meets the security requirements."
                 : "Use 8+ characters with uppercase, lowercase, a number and a symbol.";
@@ -40,9 +41,7 @@ namespace UI
             }
 
             bool matches = string.Equals(txtPassword.Text, txtConfirmPassword.Text, StringComparison.Ordinal);
-            lblFormStatus.ForeColor = matches
-                ? System.Drawing.Color.FromArgb(22, 101, 52)
-                : System.Drawing.Color.FromArgb(185, 28, 28);
+            lblFormStatus.ForeColor = matches ? SuccessColor : ErrorColor;
             lblFormStatus.Text = matches ? "Passwords match." : "Passwords do not match.";
         }
 
@@ -84,12 +83,10 @@ namespace UI
             btnCreate.Text = "Creating account...";
             try
             {
-                var svc = new UserService(connStr);
-                var rows = svc.CreateUser(email, PasswordHelper.HashPassword(password));
+                var rows = new UserService(connStr).CreateUser(email, PasswordHelper.HashPassword(password));
                 if (rows > 0)
                 {
-                    MessageBox.Show(this, "Your account has been created. You can now sign in.",
-                        "Account created", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo(this, "Your account has been created. You can now sign in.", "Account created");
                     Close();
                 }
                 else
@@ -120,7 +117,7 @@ namespace UI
 
         private void ShowError(string message)
         {
-            lblFormStatus.ForeColor = System.Drawing.Color.FromArgb(185, 28, 28);
+            lblFormStatus.ForeColor = ErrorColor;
             lblFormStatus.Text = message;
         }
     }

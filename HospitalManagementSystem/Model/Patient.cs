@@ -1,7 +1,6 @@
-﻿using System;
-
-namespace Model
+﻿namespace Model
 {
+    /// <summary>A patient's details.</summary>
     public class Patient
     {
         public int PatientID { get; set; }

@@ -1,12 +1,22 @@
-using System;
 using System.Data;
-using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
 
 namespace UI
 {
+    /// <summary>Master Data screen: add services, room types, departments, diagnosis codes and drug categories.</summary>
     public partial class MasterDataUserControl : UserControl
     {
+        private const string DefaultServiceCategory = "Other";
+
+        // Master-data types stored in a generic lookup table, mapped to the table name used in their stored procedures.
+        private static readonly Dictionary<string, string> LookupTables = new()
+        {
+            ["Room Type"] = "tblRoomTypes",
+            ["Diagnosis Code"] = "tblDiagnosisCodes",
+            ["Department"] = "tblDepartmentTypes",
+            ["Drug Category"] = "tblDrugCategories"
+        };
+
         private bool _loading;
         private readonly ComboBox _serviceCategory = new();
         private readonly Label _serviceCategoryLabel = new();
@@ -25,13 +35,13 @@ namespace UI
             dgvMasterData.SelectionChanged += dgvMasterData_SelectionChanged;
             numRate.Maximum = 10000000;
             _serviceCategory.DropDownStyle = ComboBoxStyle.DropDownList;
-            _serviceCategory.Items.AddRange(new object[] { "Consultation", "Laboratory", "Imaging", "Procedure", "Medication", "Supply", "Other" });
-            _serviceCategory.Location = new System.Drawing.Point(235, 315);
-            _serviceCategory.Size = new System.Drawing.Size(200, 27);
+            _serviceCategory.Items.AddRange(new object[] { "Consultation", "Laboratory", "Imaging", "Procedure", "Medication", "Supply", DefaultServiceCategory });
+            _serviceCategory.Location = new Point(235, 315);
+            _serviceCategory.Size = new Size(200, 27);
             _serviceCategory.Font = txtCode.Font;
             _serviceCategory.Visible = false;
             _serviceCategoryLabel.AutoSize = true;
-            _serviceCategoryLabel.Location = new System.Drawing.Point(235, 290);
+            _serviceCategoryLabel.Location = new Point(235, 290);
             _serviceCategoryLabel.Font = lblRate.Font;
             _serviceCategoryLabel.Text = "Category:";
             _serviceCategoryLabel.Visible = false;
@@ -43,13 +53,24 @@ namespace UI
 
         private string SelectedType => cmbDataType.SelectedItem?.ToString() ?? string.Empty;
 
+        private bool IsServiceSelected => SelectedType == "Service";
+
+        private string SelectedServiceCategory => _serviceCategory.SelectedItem?.ToString() ?? DefaultServiceCategory;
+
+        // Stored-procedure table name for the selected non-service type.
+        private string SelectedLookupTable =>
+            LookupTables.TryGetValue(SelectedType, out var table)
+                ? table
+                : throw new InvalidOperationException("Select a supported master-data type.");
+
         private void cmbDataType_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            lblRate.Text = SelectedType == "Service" ? "Rate/Cost:" : "Rate/Cost (N/A):";
-            numRate.Enabled = SelectedType == "Service";
-            _serviceCategory.Visible = SelectedType == "Service";
-            _serviceCategoryLabel.Visible = SelectedType == "Service";
-            _serviceCategory.SelectedIndex = SelectedType == "Service" ? _serviceCategory.Items.IndexOf("Other") : -1;
+            var isService = IsServiceSelected;
+            lblRate.Text = isService ? "Rate/Cost:" : "Rate/Cost (N/A):";
+            numRate.Enabled = isService;
+            _serviceCategory.Visible = isService;
+            _serviceCategoryLabel.Visible = isService;
+            _serviceCategory.SelectedIndex = isService ? _serviceCategory.Items.IndexOf(DefaultServiceCategory) : -1;
             LoadMasterData();
         }
 
@@ -84,7 +105,7 @@ namespace UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to load master data: {ex.Message}", "Master Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to load master data: {ex.Message}", "Master Data Error");
             }
             finally
             {
@@ -96,7 +117,7 @@ namespace UI
         {
             if (string.IsNullOrWhiteSpace(txtDescription.Text) || string.IsNullOrWhiteSpace(txtCode.Text) || string.IsNullOrEmpty(SelectedType))
             {
-                MessageBox.Show("Select a data type and enter both a name and code.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Select a data type and enter both a name and code.", "Validation Error");
                 return;
             }
 
@@ -105,43 +126,27 @@ namespace UI
                 string code = txtCode.Text.Trim();
                 string name = txtDescription.Text.Trim();
                 string status = chkActive.Checked ? "Active" : "Inactive";
-                switch (SelectedType)
+                if (IsServiceSelected)
                 {
-                    case "Service":
-                        DbHelper.Execute("EXEC dbo.usp_tblServices_Create @Code, @Name, @Category, @DrugCategoryCode, @UnitPrice",
-                            new SqlParameter("@Code", code), new SqlParameter("@Name", name),
-                            new SqlParameter("@Category", _serviceCategory.SelectedItem?.ToString() ?? "Other"),
-                            new SqlParameter("@DrugCategoryCode", DBNull.Value),
-                            new SqlParameter("@UnitPrice", numRate.Value));
-                        break;
-                    case "Room Type":
-                        DbHelper.Execute("EXEC dbo.usp_tblRoomTypes_Create @Code, @Name, @Status, @Notes",
-                            new SqlParameter("@Code", code), new SqlParameter("@Name", name),
-                            new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
-                        break;
-                    case "Diagnosis Code":
-                        DbHelper.Execute("EXEC dbo.usp_tblDiagnosisCodes_Create @Code, @Name, @Status, @Notes",
-                            new SqlParameter("@Code", code), new SqlParameter("@Name", name),
-                            new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
-                        break;
-                    case "Department":
-                        DbHelper.Execute("EXEC dbo.usp_tblDepartmentTypes_Create @Code, @Name, @Status, @Notes",
-                            new SqlParameter("@Code", code), new SqlParameter("@Name", name),
-                            new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
-                        break;
-                    case "Drug Category":
-                        DbHelper.Execute("EXEC dbo.usp_tblDrugCategories_Create @Code, @Name, @Status, @Notes",
-                            new SqlParameter("@Code", code), new SqlParameter("@Name", name),
-                            new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
-                        break;
+                    DbHelper.Execute("EXEC dbo.usp_tblServices_Create @Code, @Name, @Category, @DrugCategoryCode, @UnitPrice",
+                        new SqlParameter("@Code", code), new SqlParameter("@Name", name),
+                        new SqlParameter("@Category", SelectedServiceCategory),
+                        new SqlParameter("@DrugCategoryCode", DBNull.Value),
+                        new SqlParameter("@UnitPrice", numRate.Value));
+                }
+                else if (LookupTables.TryGetValue(SelectedType, out var table))
+                {
+                    DbHelper.Execute($"EXEC dbo.usp_{table}_Create @Code, @Name, @Status, @Notes",
+                        new SqlParameter("@Code", code), new SqlParameter("@Name", name),
+                        new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
                 }
                 LoadMasterData();
                 ClearForm();
-                MessageBox.Show("Master data added.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo("Master data added.", "Success");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to add master data: {ex.Message}", "Master Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to add master data: {ex.Message}", "Master Data Error");
             }
         }
 
@@ -149,7 +154,7 @@ namespace UI
         {
             if (dgvMasterData.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a record to edit.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Select a record to edit.", "Selection Required");
                 return;
             }
 
@@ -159,34 +164,26 @@ namespace UI
                 int id = Convert.ToInt32(row.Cells["colID"].Value);
                 string name = txtDescription.Text.Trim();
                 string status = chkActive.Checked ? "Active" : "Inactive";
-                if (SelectedType == "Service")
+                if (IsServiceSelected)
                 {
                     DbHelper.Execute("EXEC dbo.usp_tblServices_Update @ServiceID, @Code, @Name, @Category, @DrugCategoryCode, @UnitPrice, @IsActive",
                         new SqlParameter("@ServiceID", id), new SqlParameter("@Code", txtCode.Text.Trim()),
-                        new SqlParameter("@Name", name), new SqlParameter("@Category", _serviceCategory.SelectedItem?.ToString() ?? "Other"),
+                        new SqlParameter("@Name", name), new SqlParameter("@Category", SelectedServiceCategory),
                         new SqlParameter("@DrugCategoryCode", DBNull.Value), new SqlParameter("@UnitPrice", numRate.Value),
                         new SqlParameter("@IsActive", chkActive.Checked));
                 }
                 else
                 {
-                    string procedure = SelectedType switch
-                    {
-                        "Room Type" => "usp_tblRoomTypes_Update",
-                        "Diagnosis Code" => "usp_tblDiagnosisCodes_Update",
-                        "Department" => "usp_tblDepartmentTypes_Update",
-                        "Drug Category" => "usp_tblDrugCategories_Update",
-                        _ => throw new InvalidOperationException("Select a supported master-data type.")
-                    };
-                    DbHelper.Execute($"EXEC dbo.{procedure} @Id, @Name, @Status, @Notes",
+                    DbHelper.Execute($"EXEC dbo.usp_{SelectedLookupTable}_Update @Id, @Name, @Status, @Notes",
                         new SqlParameter("@Id", id), new SqlParameter("@Name", name),
                         new SqlParameter("@Status", status), new SqlParameter("@Notes", DBNull.Value));
                 }
                 LoadMasterData();
-                MessageBox.Show("Master data updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo("Master data updated.", "Success");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to update master data: {ex.Message}", "Master Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to update master data: {ex.Message}", "Master Data Error");
             }
         }
 
@@ -194,7 +191,7 @@ namespace UI
         {
             if (dgvMasterData.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Select a record to deactivate.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Select a record to deactivate.", "Selection Required");
                 return;
             }
 
@@ -202,28 +199,20 @@ namespace UI
             int id = Convert.ToInt32(row.Cells["colID"].Value);
             try
             {
-                if (SelectedType == "Service")
+                if (IsServiceSelected)
                 {
                     DbHelper.Execute("EXEC dbo.usp_tblServices_Deactivate @ServiceID", new SqlParameter("@ServiceID", id));
                 }
                 else
                 {
-                    string procedure = SelectedType switch
-                    {
-                        "Room Type" => "usp_tblRoomTypes_SoftDelete",
-                        "Diagnosis Code" => "usp_tblDiagnosisCodes_SoftDelete",
-                        "Department" => "usp_tblDepartmentTypes_SoftDelete",
-                        "Drug Category" => "usp_tblDrugCategories_SoftDelete",
-                        _ => throw new InvalidOperationException("Select a supported master-data type.")
-                    };
-                    DbHelper.Execute($"EXEC dbo.{procedure} @Id", new SqlParameter("@Id", id));
+                    DbHelper.Execute($"EXEC dbo.usp_{SelectedLookupTable}_SoftDelete @Id", new SqlParameter("@Id", id));
                 }
                 LoadMasterData();
                 ClearForm();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Unable to deactivate master data: {ex.Message}", "Master Data Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError($"Unable to deactivate master data: {ex.Message}", "Master Data Error");
             }
         }
 
@@ -234,7 +223,7 @@ namespace UI
             txtDescription.Clear();
             txtCode.Clear();
             numRate.Value = 0;
-            if (SelectedType == "Service" && _serviceCategory.Items.Count > 0) _serviceCategory.SelectedIndex = _serviceCategory.Items.IndexOf("Other");
+            if (IsServiceSelected && _serviceCategory.Items.Count > 0) _serviceCategory.SelectedIndex = _serviceCategory.Items.IndexOf(DefaultServiceCategory);
             chkActive.Checked = true;
             dgvMasterData.ClearSelection();
         }
@@ -249,7 +238,7 @@ namespace UI
             if (decimal.TryParse(row.Cells["colRate"].Value?.ToString(), out decimal rate)) numRate.Value = rate;
             chkActive.Checked = row.Cells["colStatus"].Value?.ToString() == "Active";
 
-            if (SelectedType == "Service")
+            if (IsServiceSelected)
             {
                 DataTable service = DbHelper.Query(
                     "SELECT Category FROM dbo.tblServices WHERE ServiceID = @ServiceID",

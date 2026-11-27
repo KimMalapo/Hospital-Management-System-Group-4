@@ -6,6 +6,7 @@ using Model;
 
 namespace UI;
 
+/// <summary>Active Admissions screen: who's admitted now, with buttons to add charges, view the bill or discharge.</summary>
 public sealed class ActiveAdmissionsUserControl : UserControl
 {
     private readonly TextBox _search = new();
@@ -15,6 +16,8 @@ public sealed class ActiveAdmissionsUserControl : UserControl
     private readonly Panel _emptyStatePanel = new();
     private readonly System.Windows.Forms.Timer _searchTimer = new() { Interval = 300 };
     private AdmissionService? _admissionService;
+
+    private const string LoadFailedText = "Admissions could not be loaded. Check the database connection and try again.";
 
     public event EventHandler<ActiveAdmissionActionEventArgs>? ActionRequested;
 
@@ -72,7 +75,7 @@ public sealed class ActiveAdmissionsUserControl : UserControl
             _admissionsGrid.DataSource = null;
             _admissionsGrid.Visible = false;
             _emptyStatePanel.Visible = true;
-            _emptyState.Text = "Admissions could not be loaded. Check the database connection and try again.";
+            _emptyState.Text = LoadFailedText;
         }
     }
 
@@ -120,14 +123,7 @@ public sealed class ActiveAdmissionsUserControl : UserControl
         }, 0, 1);
         root.Controls.Add(heading, 0, 0);
 
-        var toolbarCard = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(16, 10, 16, 10),
-            Margin = new Padding(0, 0, 0, 14)
-        };
+        var toolbarCard = CreateCard(new Padding(16, 10, 16, 10), new Padding(0, 0, 0, 14));
         var toolbar = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -159,14 +155,7 @@ public sealed class ActiveAdmissionsUserControl : UserControl
         toolbarCard.Controls.Add(toolbar);
         root.Controls.Add(toolbarCard, 0, 1);
 
-        var gridCard = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(12),
-            Margin = Padding.Empty
-        };
+        var gridCard = CreateCard(new Padding(12), Padding.Empty);
         var gridContainer = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
         ConfigureGrid();
         _admissionsGrid.Dock = DockStyle.Fill;
@@ -196,6 +185,32 @@ public sealed class ActiveAdmissionsUserControl : UserControl
         root.Controls.Add(gridCard, 0, 2);
         Controls.Add(root);
     }
+
+    private static Panel CreateCard(Padding padding, Padding margin) => new()
+    {
+        Dock = DockStyle.Fill,
+        BackColor = Color.White,
+        BorderStyle = BorderStyle.FixedSingle,
+        Padding = padding,
+        Margin = margin
+    };
+
+    private static DataGridViewButtonColumn CreateActionColumn(string name, string text, float fillWeight) => new()
+    {
+        Name = name,
+        Text = text,
+        UseColumnTextForButtonValue = true,
+        HeaderText = "",
+        FillWeight = fillWeight,
+        FlatStyle = FlatStyle.Flat,
+        DefaultCellStyle =
+        {
+            BackColor = Color.FromArgb(239, 246, 255),
+            ForeColor = Color.FromArgb(37, 99, 235),
+            SelectionBackColor = Color.FromArgb(219, 234, 254),
+            SelectionForeColor = Color.FromArgb(30, 64, 175)
+        }
+    };
 
     private static void AddToolbarLabel(TableLayoutPanel layout, string text, int column, int row)
     {
@@ -247,18 +262,9 @@ public sealed class ActiveAdmissionsUserControl : UserControl
         _admissionsGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "DaysStayed", HeaderText = "Days", FillWeight = 40 });
         _admissionsGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "RunningTotal", HeaderText = "Running Total", FillWeight = 80, DefaultCellStyle = new DataGridViewCellStyle { Format = "₱#,##0.00", Alignment = DataGridViewContentAlignment.MiddleRight } });
         _admissionsGrid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Status", HeaderText = "Status", FillWeight = 70 });
-        _admissionsGrid.Columns.Add(new DataGridViewButtonColumn { Name = "AddCharges", Text = "Add charges", UseColumnTextForButtonValue = true, HeaderText = "", FillWeight = 80 });
-        _admissionsGrid.Columns.Add(new DataGridViewButtonColumn { Name = "ViewBill", Text = "View bill", UseColumnTextForButtonValue = true, HeaderText = "", FillWeight = 65 });
-        _admissionsGrid.Columns.Add(new DataGridViewButtonColumn { Name = "Discharge", Text = "Discharge", UseColumnTextForButtonValue = true, HeaderText = "", FillWeight = 70 });
-        foreach (var columnName in new[] { "AddCharges", "ViewBill", "Discharge" })
-        {
-            var buttonColumn = (DataGridViewButtonColumn)_admissionsGrid.Columns[columnName];
-            buttonColumn.FlatStyle = FlatStyle.Flat;
-            buttonColumn.DefaultCellStyle.BackColor = Color.FromArgb(239, 246, 255);
-            buttonColumn.DefaultCellStyle.ForeColor = Color.FromArgb(37, 99, 235);
-            buttonColumn.DefaultCellStyle.SelectionBackColor = Color.FromArgb(219, 234, 254);
-            buttonColumn.DefaultCellStyle.SelectionForeColor = Color.FromArgb(30, 64, 175);
-        }
+        _admissionsGrid.Columns.Add(CreateActionColumn("AddCharges", "Add charges", 80));
+        _admissionsGrid.Columns.Add(CreateActionColumn("ViewBill", "View bill", 65));
+        _admissionsGrid.Columns.Add(CreateActionColumn("Discharge", "Discharge", 70));
     }
 
     private void ActiveAdmissionsUserControl_Load(object? sender, EventArgs e)
@@ -272,7 +278,7 @@ public sealed class ActiveAdmissionsUserControl : UserControl
         {
             Logger.Error("ActiveAdmissionsUserControl.Load failed", ex);
             _emptyState.Visible = true;
-            _emptyState.Text = "Admissions could not be loaded. Check the database connection and try again.";
+            _emptyState.Text = LoadFailedText;
         }
     }
 
@@ -311,6 +317,7 @@ public sealed class ActiveAdmissionsUserControl : UserControl
     }
 }
 
+/// <summary>The buttons on each row of the list.</summary>
 public enum ActiveAdmissionAction
 {
     AddCharges,
@@ -318,6 +325,7 @@ public enum ActiveAdmissionAction
     Discharge
 }
 
+/// <summary>Which button was clicked, and for which admission.</summary>
 public sealed class ActiveAdmissionActionEventArgs(int admissionId, string admissionNo, ActiveAdmissionAction action) : EventArgs
 {
     public int AdmissionId { get; } = admissionId;

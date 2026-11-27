@@ -1,17 +1,18 @@
-
-using System;
-using System.Drawing;
-using System.Windows.Forms;
-
 namespace UI;
 
+/// <summary>Shared colors and fonts.</summary>
 internal static class UITheme
 {
+    private const string FontName = "Segoe UI";
+
     private static readonly Color Canvas = Color.FromArgb(245, 247, 251);
     private static readonly Color Surface = Color.White;
     private static readonly Color Primary = Color.FromArgb(37, 99, 235);
     private static readonly Color Text = Color.FromArgb(51, 65, 85);
     private static readonly Color Border = Color.FromArgb(203, 213, 225);
+    private static readonly Color Heading = Color.FromArgb(30, 41, 59);
+
+    private static readonly string[] PrimaryButtonKeywords = { "Add", "Save", "Update", "Search", "Login" };
 
    
     private static readonly Font BodyFont =
@@ -32,7 +33,7 @@ internal static class UITheme
     public static void Apply(Control root)
     {
         root.BackColor = Canvas;
-        root.Font = BodyFont;
+        root.Font = new Font(FontName, 9.5F);
 
         foreach (Control control in root.Controls)
             ApplyToControl(control);
@@ -54,19 +55,19 @@ internal static class UITheme
                 break;
 
             case TextBox textBox:
-                textBox.Font = InputFont;
+                textBox.Font = new Font(FontName, 10F);
                 textBox.ForeColor = Text;
                 break;
 
             case ComboBox comboBox:
-                comboBox.Font = InputFont;
+                comboBox.Font = new Font(FontName, 9.5F);
                 comboBox.ForeColor = Text;
                 break;
 
             case GroupBox groupBox:
                 groupBox.BackColor = Surface;
-                groupBox.ForeColor = Color.FromArgb(30, 41, 59);
-                groupBox.Font = SubHeadingFont;
+                groupBox.ForeColor = Heading;
+                groupBox.Font = new Font(FontName, 10F, FontStyle.Bold);
                 break;
 
             case Label label:
@@ -74,8 +75,8 @@ internal static class UITheme
 
                 if (label.Font.Size >= 18F)
                 {
-                    label.Font = HeadingFont;
-                    label.ForeColor = Color.FromArgb(30, 41, 59);
+                    label.Font = new Font(FontName, 20F, FontStyle.Bold);
+                    label.ForeColor = Heading;
                 }
                 else if (label.Font.Bold)
                 {
@@ -100,12 +101,7 @@ internal static class UITheme
 
     private static void StyleButton(Button button)
     {
-        var isPrimary =
-            button.Name.Contains("Add", StringComparison.OrdinalIgnoreCase)
-            || button.Name.Contains("Save", StringComparison.OrdinalIgnoreCase)
-            || button.Name.Contains("Update", StringComparison.OrdinalIgnoreCase)
-            || button.Name.Contains("Search", StringComparison.OrdinalIgnoreCase)
-            || button.Name.Contains("Login", StringComparison.OrdinalIgnoreCase);
+        var isPrimary = PrimaryButtonKeywords.Any(keyword => button.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 
         button.FlatStyle = FlatStyle.Flat;
         button.FlatAppearance.BorderSize = isPrimary ? 0 : 1;
@@ -117,7 +113,7 @@ internal static class UITheme
 
         button.BackColor = isPrimary ? Primary : Surface;
         button.ForeColor = isPrimary ? Color.White : Text;
-        button.Font = ButtonFont;
+        button.Font = new Font(FontName, 9.5F, isPrimary ? FontStyle.Bold : FontStyle.Regular);
         button.Cursor = Cursors.Hand;
         button.UseVisualStyleBackColor = false;
     }
@@ -131,40 +127,17 @@ internal static class UITheme
 
         grid.GridColor = Color.FromArgb(226, 232, 240);
         grid.EnableHeadersVisualStyles = false;
-
-        grid.ColumnHeadersBorderStyle =
-            DataGridViewHeaderBorderStyle.None;
-
-        grid.ColumnHeadersDefaultCellStyle.BackColor =
-            Color.FromArgb(248, 250, 252);
-
-        grid.ColumnHeadersDefaultCellStyle.ForeColor =
-            Color.FromArgb(71, 85, 105);
-
-        grid.ColumnHeadersDefaultCellStyle.Font =
-            SubHeadingFont;
-
-        grid.ColumnHeadersHeight = Math.Max(
-            grid.ColumnHeadersHeight, 42);
-
+        grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+        grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
+        grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(71, 85, 105);
+        grid.ColumnHeadersDefaultCellStyle.Font = new Font(FontName, 9F, FontStyle.Bold);
+        grid.ColumnHeadersHeight = Math.Max(grid.ColumnHeadersHeight, 38);
         grid.DefaultCellStyle.BackColor = Surface;
         grid.DefaultCellStyle.ForeColor = Text;
-
-        grid.DefaultCellStyle.SelectionBackColor =
-            Color.FromArgb(219, 234, 254);
-
-        grid.DefaultCellStyle.SelectionForeColor =
-            Color.FromArgb(30, 41, 59);
-
-        grid.DefaultCellStyle.Font = BodyFont;
-
-        grid.AlternatingRowsDefaultCellStyle.BackColor =
-            Color.FromArgb(250, 251, 253);
-
-        grid.RowTemplate.Height = Math.Max(
-            grid.RowTemplate.Height, 40);
-
-        grid.AutoSizeColumnsMode =
-            DataGridViewAutoSizeColumnsMode.Fill;
+        grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(219, 234, 254);
+        grid.DefaultCellStyle.SelectionForeColor = Heading;
+        grid.DefaultCellStyle.Font = new Font(FontName, 9.5F);
+        grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(250, 251, 253);
+        grid.RowTemplate.Height = Math.Max(grid.RowTemplate.Height, 36);
     }
 }
