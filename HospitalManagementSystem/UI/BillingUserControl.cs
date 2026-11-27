@@ -1,5 +1,7 @@
+﻿using System;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using BusinessLogic;
 using Model;
@@ -46,41 +48,17 @@ public sealed class BillingUserControl : UserControl
         _voidBill.Click += VoidBill_Click;
     }
 
-    protected override void Dispose(bool disposing)
+    public partial class BillingUserControl : UserControl
     {
-        if (disposing) _errors.Dispose();
-        base.Dispose(disposing);
-    }
+        private readonly int? _initialAdmissionId;
+        private AdmissionService? _admissionService;
+        private BillingService? _billingService;
+        private Bill? _bill;
+        private bool _loading;
 
-    private void BuildLayout()
-    {
-        BackColor = Color.FromArgb(245, 247, 251);
-        Font = new Font("Segoe UI", 9.5F);
+        public event EventHandler<BillNavigationEventArgs>? GoToPaymentRequested;
 
-        var root = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(28, 22, 28, 24),
-            ColumnCount = 1,
-            RowCount = 3,
-            BackColor = BackColor
-        };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 86));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        var heading = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
-        heading.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        heading.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        heading.Controls.Add(new Label
-        {
-            Text = "Billing",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 20, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 41, 59),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 0);
-        heading.Controls.Add(new Label
+        public BillingUserControl() : this(null)
         {
             Text = "Generate and review the itemized bill for an admission.",
             Dock = DockStyle.Fill,
@@ -196,64 +174,57 @@ public sealed class BillingUserControl : UserControl
         Controls.Add(root);
     }
 
-    private void BillingUserControl_Load(object? sender, EventArgs e)
-    {
-        try
+        private void BillingUserControl_Load(object? sender, EventArgs e)
         {
-            var connectionString = Config.GetConnectionString();
-            _admissionService = new AdmissionService(connectionString);
-            _billingService = new BillingService(connectionString);
-            _loading = true;
-            var admissions = _admissionService.Search(string.Empty);
-            admissions.Columns.Add("AdmissionDisplay", typeof(string));
-            foreach (DataRow row in admissions.Rows)
+            try
             {
-                row["AdmissionDisplay"] = $"{row["AdmissionNo"]}  |  {row["PatientName"]}  |  Room {row["RoomNo"]}  |  {row["Status"]}";
+                var connectionString = Config.GetConnectionString();
+                _admissionService = new AdmissionService(connectionString);
+                _billingService = new BillingService(connectionString);
+                _loading = true;
+
+                var admissions = _admissionService.Search(string.Empty);
+                admissions.Columns.Add("AdmissionDisplay", typeof(string));
+                foreach (DataRow row in admissions.Rows)
+                {
+                    row["AdmissionDisplay"] = $"{row["AdmissionNo"]} | {row["PatientName"]} | Room {row["RoomNo"]} | {row["Status"]}";
+                }
+
+                cmbAdmissions.DataSource = admissions;
+                cmbAdmissions.DisplayMember = "AdmissionDisplay";
+                cmbAdmissions.ValueMember = "AdmissionID";
+
+                if (_initialAdmissionId.HasValue)
+                    cmbAdmissions.SelectedValue = _initialAdmissionId.Value;
+                else if (cmbAdmissions.Items.Count > 0)
+                    cmbAdmissions.SelectedIndex = 0;
             }
-            _admissions.DataSource = admissions;
-            _admissions.DisplayMember = "AdmissionDisplay";
-            _admissions.ValueMember = "AdmissionID";
-            if (_initialAdmissionId.HasValue)
-                _admissions.SelectedValue = _initialAdmissionId.Value;
-            else if (_admissions.Items.Count > 0)
-                _admissions.SelectedIndex = 0;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("BillingUserControl.Load failed", ex);
-            SetMessage("Admissions could not be loaded. Check the database connection and try again.");
-        }
-        finally
-        {
-            _loading = false;
-        }
-        RefreshBill();
-    }
-
-    private void Admissions_SelectedIndexChanged(object? sender, EventArgs e)
-    {
-        if (!_loading) RefreshBill();
-    }
-
-    private void RefreshBill()
-    {
-        if (_billingService == null || _admissions.SelectedValue is not int admissionId)
-        {
-            ClearBill();
-            return;
-        }
-
-        try
-        {
-            _loading = true;
-            _message.Text = string.Empty;
-            _bill = _billingService.GetByAdmission(admissionId);
-            if (_bill == null)
+            catch (Exception ex)
             {
-                _items.DataSource = null;
-                SetBillTotals(null);
-                _generate.Enabled = IsSelectedAdmissionActive();
-                SetMessage("No bill exists yet. Generate one to calculate the room stay and posted charges.", false);
+                Logger.Error("BillingUserControl.Load failed", ex);
+                SetMessage("Admissions could not be loaded. Check the database connection and try again.");
+            }
+            finally
+            {
+                _loading = false;
+            }
+
+            RefreshBill();
+        }
+
+        private void Admissions_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (!_loading)
+                RefreshBill();
+        }
+
+        private void RefreshBill()
+        {
+            errProvider.Clear();
+
+            if (_billingService == null || cmbAdmissions.SelectedValue is not int admissionId)
+            {
+                ClearBill();
                 return;
             }
 
@@ -271,56 +242,114 @@ public sealed class BillingUserControl : UserControl
         {
             _loading = false;
         }
-    }
 
-    private void Generate_Click(object? sender, EventArgs e)
-    {
-        if (_admissions.SelectedValue is not int admissionId || _billingService == null) return;
-        try
+        private void Generate_Click(object? sender, EventArgs e)
         {
-            _generate.Enabled = false;
-            _bill = _billingService.Generate(admissionId);
-            RefreshBill();
-            SetMessage($"Bill {_bill.BillNo} is ready.", false);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("BillingUserControl.Generate failed", ex);
-            SetMessage(ex is ValidationException ? ex.Message : "The bill could not be generated. Please try again.");
-            _generate.Enabled = false;
-        }
-    }
+            if (cmbAdmissions.SelectedValue is not int admissionId || _billingService == null)
+                return;
 
-    private void ApplyDiscount_Click(object? sender, EventArgs e)
-    {
-        _errors.Clear();
-        if (_bill == null || _billingService == null) return;
-        if (!decimal.TryParse(_discount.Text.Trim(), out var amount) || amount < 0)
-        {
-            _errors.SetError(_discount, "Enter a valid discount amount of zero or more.");
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(_discountReason.Text))
-        {
-            _errors.SetError(_discountReason, "Enter a reason for the discount.");
-            return;
+            try
+            {
+                btnGenerate.Enabled = false;
+                _bill = _billingService.Generate(admissionId);
+                RefreshBill();
+                SetMessage($"Bill {_bill.BillNo} is ready.", false);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("BillingUserControl.Generate failed", ex);
+                SetMessage(ex is ValidationException ? ex.Message : "The bill could not be generated. Please try again.");
+                btnGenerate.Enabled = false;
+            }
         }
 
-        try
+        private void ApplyDiscount_Click(object? sender, EventArgs e)
         {
-            _applyDiscount.Enabled = false;
-            _billingService.ApplyDiscount(_bill.BillID, amount, _discountReason.Text.Trim());
-            _discount.Clear();
-            _discountReason.Clear();
-            RefreshBill();
-            SetMessage("Discount updated.", false);
+            errProvider.Clear();
+            lblMessage.Text = string.Empty;
+
+            if (_bill == null || _billingService == null)
+                return;
+
+            if (!TryValidateDiscount(txtDiscount.Text, txtDiscountReason.Text, _bill.Subtotal, out var amount, out var discountError, out var reasonError))
+            {
+                if (!string.IsNullOrEmpty(discountError))
+                    errProvider.SetError(txtDiscount, discountError);
+                if (!string.IsNullOrEmpty(reasonError))
+                    errProvider.SetError(txtDiscountReason, reasonError);
+                return;
+            }
+
+            try
+            {
+                btnApplyDiscount.Enabled = false;
+                _billingService.ApplyDiscount(_bill.BillID, amount, txtDiscountReason.Text.Trim());
+                txtDiscount.Clear();
+                txtDiscountReason.Clear();
+                RefreshBill();
+                SetMessage("Discount updated.", false);
+            }
+            catch (ValidationException ex)
+            {
+                if (string.Equals(ex.Field, "Reason", StringComparison.OrdinalIgnoreCase))
+                    errProvider.SetError(txtDiscountReason, ex.Message);
+                else
+                    errProvider.SetError(txtDiscount, ex.Message);
+                SetMessage(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("BillingUserControl.ApplyDiscount failed", ex);
+                SetMessage("The discount could not be applied. Please try again.");
+            }
+            finally
+            {
+                btnApplyDiscount.Enabled = _bill != null
+                                           && _bill.Status != BillStatus.Paid
+                                           && _bill.Status != BillStatus.Voided
+                                           && _bill.Balance > 0;
+            }
         }
-        catch (Exception ex)
+
+        private void GoToPayment_Click(object? sender, EventArgs e)
         {
-            Logger.Error("BillingUserControl.ApplyDiscount failed", ex);
-            SetMessage(ex is ValidationException ? ex.Message : "The discount could not be applied. Please try again.");
+            if (_bill == null)
+                return;
+
+            GoToPaymentRequested?.Invoke(this, new BillNavigationEventArgs(_bill.BillID, _bill.AdmissionID));
         }
-    }
+
+        /// <summary>
+        /// Validates discount amount (0 to subtotal, max 2 decimals) and mandatory discount reason.
+        /// </summary>
+        public static bool TryValidateDiscount(
+            string? discountInput,
+            string? reasonInput,
+            decimal subtotal,
+            out decimal amount,
+            out string discountError,
+            out string reasonError)
+        {
+            amount = 0m;
+            discountError = string.Empty;
+            reasonError = string.Empty;
+
+            var trimmedAmount = discountInput?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(trimmedAmount) ||
+                (!decimal.TryParse(trimmedAmount, NumberStyles.Number, CultureInfo.InvariantCulture, out amount) &&
+                 !decimal.TryParse(trimmedAmount, NumberStyles.Number, CultureInfo.CurrentCulture, out amount)) ||
+                amount < 0m)
+            {
+                discountError = "Enter a valid discount amount of zero or more.";
+            }
+            else if (decimal.Round(amount, 2) != amount)
+            {
+                discountError = "Discount cannot have more than 2 decimal places.";
+            }
+            else if (amount > subtotal)
+            {
+                discountError = $"Discount cannot exceed the subtotal of ₱{subtotal:#,##0.00}.";
+            }
 
     // Opens the payments window; the bill totals may change there, so reload afterwards.
     private void Payments_Click(object? sender, EventArgs e)
@@ -384,19 +413,14 @@ public sealed class BillingUserControl : UserControl
         _items.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Amount", HeaderText = "Line total", FillWeight = 17, DefaultCellStyle = new DataGridViewCellStyle { Format = "₱#,##0.00", Alignment = DataGridViewContentAlignment.MiddleRight } });
     }
 
-    private bool IsSelectedAdmissionActive() =>
-        _admissions.SelectedItem is DataRowView row &&
-        string.Equals(Convert.ToString(row["Status"]), AdmissionStatus.Admitted, StringComparison.OrdinalIgnoreCase);
+            return string.IsNullOrEmpty(discountError) && string.IsNullOrEmpty(reasonError);
+        }
 
-    private void SetBillTotals(Bill? bill)
-    {
-        _billStatus.Text = bill?.Status ?? "Not generated";
-        _subtotal.Text = FormatMoney(bill?.Subtotal ?? 0m);
-        _discountTotal.Text = FormatMoney(bill?.Discount ?? 0m);
-        _total.Text = FormatMoney(bill?.TotalAmount ?? 0m);
-        _paid.Text = FormatMoney(bill?.AmountPaid ?? 0m);
-        _balance.Text = FormatMoney(bill?.Balance ?? 0m);
-        if (bill == null)
+        private bool IsSelectedAdmissionActive() =>
+            cmbAdmissions.SelectedItem is DataRowView row &&
+            string.Equals(Convert.ToString(row["Status"]), AdmissionStatus.Admitted, StringComparison.OrdinalIgnoreCase);
+
+        private void SetBillTotals(Bill? bill)
         {
             _discount.Clear();
             _discountReason.Clear();
@@ -407,7 +431,8 @@ public sealed class BillingUserControl : UserControl
             _voidBill.Enabled = false;
             _generate.Text = "Generate bill";
         }
-        else
+
+        private void ClearBill()
         {
             _payments.Enabled = bill.Status != BillStatus.Voided;
             _voidBill.Enabled = bill.Status != BillStatus.Voided;
@@ -415,72 +440,25 @@ public sealed class BillingUserControl : UserControl
             _discountReason.Enabled = _discount.Enabled;
             _applyDiscount.Enabled = _discount.Enabled;
         }
+
+        private void SetMessage(string text, bool isError = true)
+        {
+            lblMessage.ForeColor = isError ? Color.FromArgb(185, 28, 28) : Color.FromArgb(21, 128, 61);
+            lblMessage.Text = text;
+        }
+
+        private static string FormatMoney(decimal amount) => amount.ToString("₱#,##0.00");
     }
 
-    private void ClearBill()
+    public sealed class BillNavigationEventArgs : EventArgs
     {
-        _bill = null;
-        _items.DataSource = null;
-        SetBillTotals(null);
-        _generate.Enabled = false;
-        _message.Text = string.Empty;
-    }
+        public int BillId { get; }
+        public int AdmissionId { get; }
 
-    private void SetMessage(string text, bool isError = true)
-    {
-        _message.ForeColor = isError ? Color.FromArgb(185, 28, 28) : Color.FromArgb(21, 128, 61);
-        _message.Text = text;
-    }
-
-    private static string FormatMoney(decimal amount) => amount.ToString("₱#,##0.00");
-
-    private static Panel CreateCard(Padding padding) => new()
-    {
-        Dock = DockStyle.Fill,
-        BackColor = Color.White,
-        BorderStyle = BorderStyle.FixedSingle,
-        Padding = padding,
-        Margin = Padding.Empty
-    };
-
-    private static Label CreateSectionTitle(string text) => new()
-    {
-        Text = text,
-        Dock = DockStyle.Fill,
-        Font = new Font("Segoe UI", 11, FontStyle.Bold),
-        ForeColor = Color.FromArgb(30, 41, 59),
-        TextAlign = ContentAlignment.MiddleLeft,
-        Margin = Padding.Empty
-    };
-
-    private static Label CreateFieldLabel(string text) => new()
-    {
-        Text = text,
-        Dock = DockStyle.Fill,
-        Font = new Font("Segoe UI", 9, FontStyle.Bold),
-        ForeColor = Color.FromArgb(71, 85, 105),
-        TextAlign = ContentAlignment.MiddleLeft,
-        Margin = Padding.Empty
-    };
-
-    private static void AddTotal(TableLayoutPanel layout, int row, string label, Label value, bool emphasized = false)
-    {
-        value.Dock = DockStyle.Fill;
-        value.TextAlign = ContentAlignment.MiddleRight;
-        value.Font = new Font("Segoe UI", emphasized ? 10F : 9.5F, emphasized ? FontStyle.Bold : FontStyle.Regular);
-        value.ForeColor = emphasized ? Color.FromArgb(30, 41, 59) : Color.FromArgb(71, 85, 105);
-        layout.Controls.Add(CreateFieldLabel(label), 0, row);
-        layout.Controls.Add(value, 1, row);
-    }
-
-    private static void StylePrimaryButton(Button button)
-    {
-        button.FlatStyle = FlatStyle.Flat;
-        button.FlatAppearance.BorderSize = 0;
-        button.BackColor = Color.FromArgb(37, 99, 235);
-        button.ForeColor = Color.White;
-        button.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-        button.UseVisualStyleBackColor = false;
-        button.Cursor = Cursors.Hand;
+        public BillNavigationEventArgs(int billId, int admissionId)
+        {
+            BillId = billId;
+            AdmissionId = admissionId;
+        }
     }
 }

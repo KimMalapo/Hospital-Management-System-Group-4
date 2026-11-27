@@ -48,6 +48,13 @@
             lblAdmissionStatus = new Label();
             lblAdmissionStatusVal = new Label();
             btnClear = new Button();
+            lblAdmissionHistory = new Label();
+            dgvAdmissionHistory = new DataGridView();
+            colHistAdmissionID = new DataGridViewTextBoxColumn();
+            colHistAdmissionNo = new DataGridViewTextBoxColumn();
+            colHistRoomNo = new DataGridViewTextBoxColumn();
+            colHistAdmitDate = new DataGridViewTextBoxColumn();
+            colHistStatus = new DataGridViewTextBoxColumn();
             grpList = new GroupBox();
             txtSearch = new TextBox();
             lblSearch = new Label();
@@ -69,6 +76,7 @@
             pnlMainHandler.SuspendLayout();
             grpPatientDetails.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numAge).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvAdmissionHistory).BeginInit();
             grpList.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvPatients).BeginInit();
             SuspendLayout();
@@ -118,6 +126,8 @@
             grpPatientDetails.Controls.Add(lblAdmissionStatus);
             grpPatientDetails.Controls.Add(lblAdmissionStatusVal);
             grpPatientDetails.Controls.Add(btnClear);
+            grpPatientDetails.Controls.Add(lblAdmissionHistory);
+            grpPatientDetails.Controls.Add(dgvAdmissionHistory);
             grpPatientDetails.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
             grpPatientDetails.Location = new Point(35, 85);
             grpPatientDetails.Name = "grpPatientDetails";
@@ -130,7 +140,7 @@
             // 
             lblPatientID.AutoSize = true;
             lblPatientID.Font = new Font("Yu Gothic", 11F);
-            lblPatientID.Location = new Point(25, 45);
+            lblPatientID.Location = new Point(25, 40);
             lblPatientID.Name = "lblPatientID";
             lblPatientID.Size = new Size(81, 20);
             lblPatientID.TabIndex = 0;
@@ -139,7 +149,7 @@
             // txtPatientID
             // 
             txtPatientID.Font = new Font("Yu Gothic", 11F);
-            txtPatientID.Location = new Point(150, 40);
+            txtPatientID.Location = new Point(150, 35);
             txtPatientID.Name = "txtPatientID";
             txtPatientID.Size = new Size(300, 31);
             txtPatientID.TabIndex = 1;
@@ -148,7 +158,7 @@
             // 
             lblFirstName.AutoSize = true;
             lblFirstName.Font = new Font("Yu Gothic", 11F);
-            lblFirstName.Location = new Point(25, 95);
+            lblFirstName.Location = new Point(25, 85);
             lblFirstName.Name = "lblFirstName";
             lblFirstName.Size = new Size(88, 20);
             lblFirstName.TabIndex = 2;
@@ -157,7 +167,7 @@
             // txtFirstName
             // 
             txtFirstName.Font = new Font("Yu Gothic", 11F);
-            txtFirstName.Location = new Point(150, 90);
+            txtFirstName.Location = new Point(150, 80);
             txtFirstName.Name = "txtFirstName";
             txtFirstName.Size = new Size(300, 31);
             txtFirstName.TabIndex = 3;
@@ -166,7 +176,7 @@
             // 
             lblLastName.AutoSize = true;
             lblLastName.Font = new Font("Yu Gothic", 11F);
-            lblLastName.Location = new Point(25, 145);
+            lblLastName.Location = new Point(25, 130);
             lblLastName.Name = "lblLastName";
             lblLastName.Size = new Size(87, 20);
             lblLastName.TabIndex = 4;
@@ -175,7 +185,7 @@
             // txtLastName
             // 
             txtLastName.Font = new Font("Yu Gothic", 11F);
-            txtLastName.Location = new Point(150, 140);
+            txtLastName.Location = new Point(150, 125);
             txtLastName.Name = "txtLastName";
             txtLastName.Size = new Size(300, 31);
             txtLastName.TabIndex = 5;
@@ -184,7 +194,7 @@
             // 
             lblAge.AutoSize = true;
             lblAge.Font = new Font("Yu Gothic", 11F);
-            lblAge.Location = new Point(25, 195);
+            lblAge.Location = new Point(25, 175);
             lblAge.Name = "lblAge";
             lblAge.Size = new Size(39, 20);
             lblAge.TabIndex = 6;
@@ -193,7 +203,7 @@
             // numAge
             // 
             numAge.Font = new Font("Yu Gothic", 11F);
-            numAge.Location = new Point(150, 190);
+            numAge.Location = new Point(150, 170);
             numAge.Maximum = new decimal(new int[] { 150, 0, 0, 0 });
             numAge.Name = "numAge";
             numAge.Size = new Size(120, 31);
@@ -203,7 +213,7 @@
             // 
             lblGender.AutoSize = true;
             lblGender.Font = new Font("Yu Gothic", 11F);
-            lblGender.Location = new Point(25, 245);
+            lblGender.Location = new Point(25, 220);
             lblGender.Name = "lblGender";
             lblGender.Size = new Size(63, 20);
             lblGender.TabIndex = 8;
@@ -214,7 +224,7 @@
             cmbGender.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbGender.Font = new Font("Yu Gothic", 11F);
             cmbGender.FormattingEnabled = true;
-            cmbGender.Location = new Point(150, 240);
+            cmbGender.Location = new Point(150, 215);
             cmbGender.Name = "cmbGender";
             cmbGender.Size = new Size(300, 28);
             cmbGender.TabIndex = 9;
@@ -223,7 +233,7 @@
             // 
             lblAddress.AutoSize = true;
             lblAddress.Font = new Font("Yu Gothic", 11F);
-            lblAddress.Location = new Point(25, 295);
+            lblAddress.Location = new Point(25, 265);
             lblAddress.Name = "lblAddress";
             lblAddress.Size = new Size(70, 20);
             lblAddress.TabIndex = 10;
@@ -232,17 +242,17 @@
             // txtAddress
             // 
             txtAddress.Font = new Font("Yu Gothic", 11F);
-            txtAddress.Location = new Point(150, 290);
+            txtAddress.Location = new Point(150, 260);
             txtAddress.Multiline = true;
             txtAddress.Name = "txtAddress";
-            txtAddress.Size = new Size(300, 100);
+            txtAddress.Size = new Size(300, 74);
             txtAddress.TabIndex = 11;
             // 
             // lblContactNo
             // 
             lblContactNo.AutoSize = true;
             lblContactNo.Font = new Font("Yu Gothic", 11F);
-            lblContactNo.Location = new Point(25, 415);
+            lblContactNo.Location = new Point(25, 350);
             lblContactNo.Name = "lblContactNo";
             lblContactNo.Size = new Size(89, 20);
             lblContactNo.TabIndex = 12;
@@ -251,7 +261,7 @@
             // txtContactNo
             // 
             txtContactNo.Font = new Font("Yu Gothic", 11F);
-            txtContactNo.Location = new Point(150, 410);
+            txtContactNo.Location = new Point(150, 345);
             txtContactNo.Name = "txtContactNo";
             txtContactNo.Size = new Size(300, 31);
             txtContactNo.TabIndex = 13;
@@ -260,7 +270,7 @@
             // 
             lblAdmissionStatus.AutoSize = true;
             lblAdmissionStatus.Font = new Font("Yu Gothic", 11F);
-            lblAdmissionStatus.Location = new Point(25, 470);
+            lblAdmissionStatus.Location = new Point(25, 392);
             lblAdmissionStatus.Name = "lblAdmissionStatus";
             lblAdmissionStatus.Size = new Size(134, 20);
             lblAdmissionStatus.TabIndex = 14;
@@ -271,7 +281,7 @@
             lblAdmissionStatusVal.AutoSize = true;
             lblAdmissionStatusVal.Font = new Font("Yu Gothic Medium", 11F, FontStyle.Bold);
             lblAdmissionStatusVal.ForeColor = Color.DimGray;
-            lblAdmissionStatusVal.Location = new Point(165, 470);
+            lblAdmissionStatusVal.Location = new Point(165, 392);
             lblAdmissionStatusVal.Name = "lblAdmissionStatusVal";
             lblAdmissionStatusVal.Size = new Size(112, 19);
             lblAdmissionStatusVal.TabIndex = 15;
@@ -280,13 +290,77 @@
             // btnClear
             // 
             btnClear.Font = new Font("Yu Gothic Medium", 11F, FontStyle.Bold);
-            btnClear.Location = new Point(150, 520);
+            btnClear.Location = new Point(150, 424);
             btnClear.Name = "btnClear";
-            btnClear.Size = new Size(300, 45);
+            btnClear.Size = new Size(300, 38);
             btnClear.TabIndex = 16;
             btnClear.Text = "Clear Form";
             btnClear.UseVisualStyleBackColor = true;
             btnClear.Click += btnClear_Click;
+            // 
+            // lblAdmissionHistory
+            // 
+            lblAdmissionHistory.AutoSize = true;
+            lblAdmissionHistory.Font = new Font("Yu Gothic", 11F, FontStyle.Bold);
+            lblAdmissionHistory.Location = new Point(25, 474);
+            lblAdmissionHistory.Name = "lblAdmissionHistory";
+            lblAdmissionHistory.Size = new Size(216, 20);
+            lblAdmissionHistory.TabIndex = 17;
+            lblAdmissionHistory.Text = "Patient Admission History:";
+            // 
+            // dgvAdmissionHistory
+            // 
+            dgvAdmissionHistory.AllowUserToAddRows = false;
+            dgvAdmissionHistory.AllowUserToDeleteRows = false;
+            dgvAdmissionHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvAdmissionHistory.BackgroundColor = Color.White;
+            dgvAdmissionHistory.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvAdmissionHistory.Columns.AddRange(new DataGridViewColumn[] { colHistAdmissionID, colHistAdmissionNo, colHistRoomNo, colHistAdmitDate, colHistStatus });
+            dgvAdmissionHistory.Location = new Point(25, 500);
+            dgvAdmissionHistory.MultiSelect = false;
+            dgvAdmissionHistory.Name = "dgvAdmissionHistory";
+            dgvAdmissionHistory.ReadOnly = true;
+            dgvAdmissionHistory.RowHeadersVisible = false;
+            dgvAdmissionHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvAdmissionHistory.Size = new Size(425, 232);
+            dgvAdmissionHistory.TabIndex = 18;
+            dgvAdmissionHistory.SelectionChanged += dgvAdmissionHistory_SelectionChanged;
+            dgvAdmissionHistory.CellDoubleClick += dgvAdmissionHistory_CellDoubleClick;
+            // 
+            // colHistAdmissionID
+            // 
+            colHistAdmissionID.HeaderText = "ID";
+            colHistAdmissionID.Name = "colHistAdmissionID";
+            colHistAdmissionID.ReadOnly = true;
+            colHistAdmissionID.Visible = false;
+            // 
+            // colHistAdmissionNo
+            // 
+            colHistAdmissionNo.FillWeight = 32F;
+            colHistAdmissionNo.HeaderText = "Admission #";
+            colHistAdmissionNo.Name = "colHistAdmissionNo";
+            colHistAdmissionNo.ReadOnly = true;
+            // 
+            // colHistRoomNo
+            // 
+            colHistRoomNo.FillWeight = 18F;
+            colHistRoomNo.HeaderText = "Room";
+            colHistRoomNo.Name = "colHistRoomNo";
+            colHistRoomNo.ReadOnly = true;
+            // 
+            // colHistAdmitDate
+            // 
+            colHistAdmitDate.FillWeight = 26F;
+            colHistAdmitDate.HeaderText = "Admitted";
+            colHistAdmitDate.Name = "colHistAdmitDate";
+            colHistAdmitDate.ReadOnly = true;
+            // 
+            // colHistStatus
+            // 
+            colHistStatus.FillWeight = 24F;
+            colHistStatus.HeaderText = "Status";
+            colHistStatus.Name = "colHistStatus";
+            colHistStatus.ReadOnly = true;
             // 
             // grpList
             // 
@@ -466,6 +540,7 @@
             grpPatientDetails.ResumeLayout(false);
             grpPatientDetails.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numAge).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvAdmissionHistory).EndInit();
             grpList.ResumeLayout(false);
             grpList.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dgvPatients).EndInit();
@@ -494,6 +569,13 @@
         private Label lblAdmissionStatus;
         private Label lblAdmissionStatusVal;
         private Button btnClear;
+        private Label lblAdmissionHistory;
+        private DataGridView dgvAdmissionHistory;
+        private DataGridViewTextBoxColumn colHistAdmissionID;
+        private DataGridViewTextBoxColumn colHistAdmissionNo;
+        private DataGridViewTextBoxColumn colHistRoomNo;
+        private DataGridViewTextBoxColumn colHistAdmitDate;
+        private DataGridViewTextBoxColumn colHistStatus;
         private GroupBox grpList;
         private Label lblSearch;
         private TextBox txtSearch;

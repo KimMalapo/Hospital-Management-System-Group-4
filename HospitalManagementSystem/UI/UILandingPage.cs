@@ -80,6 +80,12 @@ namespace UI
 
         private void ActiveAdmissionsUserControl_ActionRequested(object? sender, ActiveAdmissionActionEventArgs e)
         {
+            if (e.Action == ActiveAdmissionAction.AddCharges)
+            {
+                UIHelper.ShowView(pnlUCHandler, new ChargesUserControl(e.AdmissionId));
+                return;
+            }
+
             if (e.Action == ActiveAdmissionAction.ViewBill)
             {
                 UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));

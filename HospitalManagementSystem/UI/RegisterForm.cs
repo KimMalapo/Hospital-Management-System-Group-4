@@ -14,6 +14,7 @@ namespace UI
         public RegisterForm()
         {
             InitializeComponent();
+            UITheme.Apply(this);
             btnCreate.Click += BtnCreate_Click;
             txtPassword.TextChanged += TxtPassword_TextChanged;
             txtConfirmPassword.TextChanged += TxtConfirmPassword_TextChanged;

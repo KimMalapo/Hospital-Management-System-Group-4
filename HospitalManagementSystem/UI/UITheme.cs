@@ -14,6 +14,22 @@ internal static class UITheme
 
     private static readonly string[] PrimaryButtonKeywords = { "Add", "Save", "Update", "Search", "Login" };
 
+   
+    private static readonly Font BodyFont =
+        new Font("Segoe UI", 11F);
+
+    private static readonly Font InputFont =
+        new Font("Segoe UI", 11F);
+
+    private static readonly Font HeadingFont =
+        new Font("Segoe UI", 20F, FontStyle.Bold);
+
+    private static readonly Font SubHeadingFont =
+        new Font("Segoe UI", 14F, FontStyle.Bold);
+
+    private static readonly Font ButtonFont =
+        new Font("Segoe UI", 11F, FontStyle.Bold);
+
     public static void Apply(Control root)
     {
         root.BackColor = Canvas;
@@ -25,37 +41,57 @@ internal static class UITheme
 
     private static void ApplyToControl(Control control)
     {
+        
+        control.Font = BodyFont;
+
         switch (control)
         {
             case DataGridView grid:
                 StyleGrid(grid);
                 break;
+
             case Button button:
                 StyleButton(button);
                 break;
+
             case TextBox textBox:
                 textBox.Font = new Font(FontName, 10F);
                 textBox.ForeColor = Text;
                 break;
+
             case ComboBox comboBox:
                 comboBox.Font = new Font(FontName, 9.5F);
                 comboBox.ForeColor = Text;
                 break;
+
             case GroupBox groupBox:
                 groupBox.BackColor = Surface;
                 groupBox.ForeColor = Heading;
                 groupBox.Font = new Font(FontName, 10F, FontStyle.Bold);
                 break;
+
             case Label label:
                 label.ForeColor = Text;
+
                 if (label.Font.Size >= 18F)
                 {
                     label.Font = new Font(FontName, 20F, FontStyle.Bold);
                     label.ForeColor = Heading;
                 }
+                else if (label.Font.Bold)
+                {
+                    label.Font = SubHeadingFont;
+                }
+                else
+                {
+                    label.Font = BodyFont;
+                }
                 break;
+
             case Panel panel:
-                panel.BackColor = panel.BorderStyle == BorderStyle.FixedSingle ? Surface : Canvas;
+                panel.BackColor =
+                    panel.BorderStyle == BorderStyle.FixedSingle
+                    ? Surface : Canvas;
                 break;
         }
 
@@ -70,9 +106,11 @@ internal static class UITheme
         button.FlatStyle = FlatStyle.Flat;
         button.FlatAppearance.BorderSize = isPrimary ? 0 : 1;
         button.FlatAppearance.BorderColor = Border;
+
         button.FlatAppearance.MouseOverBackColor = isPrimary
             ? Color.FromArgb(29, 78, 216)
             : Color.FromArgb(239, 246, 255);
+
         button.BackColor = isPrimary ? Primary : Surface;
         button.ForeColor = isPrimary ? Color.White : Text;
         button.Font = new Font(FontName, 9.5F, isPrimary ? FontStyle.Bold : FontStyle.Regular);
@@ -84,7 +122,9 @@ internal static class UITheme
     {
         grid.BackgroundColor = Surface;
         grid.BorderStyle = BorderStyle.None;
-        grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+        grid.CellBorderStyle =
+            DataGridViewCellBorderStyle.SingleHorizontal;
+
         grid.GridColor = Color.FromArgb(226, 232, 240);
         grid.EnableHeadersVisualStyles = false;
         grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;

@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using BusinessLogic;
+using Model;
 
 namespace UI
 {
@@ -12,12 +13,15 @@ namespace UI
         private AdmissionService? _admissionService;
         private bool _databaseWarningShown;
 
+        public event EventHandler<int>? DischargeRecordRequested;
+
         public PatientMaintenanceUserControl()
         {
             InitializeComponent();
             UITheme.Apply(this);
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtPatientID.ReadOnly = true;
+            btnViewDischargeRecord.Enabled = false;
         }
 
         private void PatientMaintenanceUserControl_Load(object sender, EventArgs e)
@@ -273,6 +277,77 @@ namespace UI
             txtAddress.Text = row.Cells["colAddress"].Value?.ToString();
             txtContactNo.Text = row.Cells["colContact"].Value?.ToString();
             lblAdmissionStatusVal.Text = row.Cells["colAdmissionStatus"].Value?.ToString() ?? NotAdmitted;
+        }
+
+        private void RefreshPatientAdmissions(int patientId)
+        {
+            dgvAdmissionHistory.Rows.Clear();
+            btnViewDischargeRecord.Enabled = false;
+
+            try
+            {
+                _admissionService ??= new AdmissionService(Config.GetConnectionString());
+                var history = _admissionService.GetByPatient(patientId);
+
+                foreach (DataRow row in history.Rows)
+                {
+                    var admissionId = Convert.ToInt32(row["AdmissionID"]);
+                    var admissionNo = Convert.ToString(row["AdmissionNo"]) ?? string.Empty;
+                    var roomNo = row.IsNull("RoomNo") ? "-" : Convert.ToString(row["RoomNo"]) ?? "-";
+                    var admitDate = row.IsNull("AdmitDate")
+                        ? "-"
+                        : TimeConversion.ToLocal(Convert.ToDateTime(row["AdmitDate"])).ToString("yyyy-MM-dd");
+                    var status = Convert.ToString(row["Status"]) ?? string.Empty;
+
+                    dgvAdmissionHistory.Rows.Add(admissionId, admissionNo, roomNo, admitDate, status);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("PatientMaintenanceUserControl.RefreshPatientAdmissions failed", ex);
+            }
+        }
+
+        private void dgvAdmissionHistory_SelectionChanged(object sender, EventArgs e)
+        {
+            btnViewDischargeRecord.Enabled = TryGetSelectedDischargedAdmissionId(out _);
+        }
+
+        private void dgvAdmissionHistory_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+                OpenSelectedDischargeRecord();
+        }
+
+        private void btnViewDischargeRecord_Click(object sender, EventArgs e)
+        {
+            OpenSelectedDischargeRecord();
+        }
+
+        private void OpenSelectedDischargeRecord()
+        {
+            if (!TryGetSelectedDischargedAdmissionId(out var admissionId))
+            {
+                MessageBox.Show(this, "Select a discharged admission from the patient's history to view its final record.",
+                    "Discharged admission required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            DischargeRecordRequested?.Invoke(this, admissionId);
+        }
+
+        private bool TryGetSelectedDischargedAdmissionId(out int admissionId)
+        {
+            admissionId = 0;
+            if (dgvAdmissionHistory.SelectedRows.Count == 0)
+                return false;
+
+            var row = dgvAdmissionHistory.SelectedRows[0];
+            var status = Convert.ToString(row.Cells["colHistStatus"].Value);
+            if (!string.Equals(status, AdmissionStatus.Discharged, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return int.TryParse(Convert.ToString(row.Cells["colHistAdmissionID"].Value), out admissionId) && admissionId > 0;
         }
     }
 }

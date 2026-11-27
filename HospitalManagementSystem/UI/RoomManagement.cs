@@ -15,6 +15,7 @@ namespace UI
         public RoomManagement()
         {
             InitializeComponent();
+            UITheme.Apply(this);
             var cs = Config.GetConnectionString();
             if (!string.IsNullOrWhiteSpace(cs))
             {

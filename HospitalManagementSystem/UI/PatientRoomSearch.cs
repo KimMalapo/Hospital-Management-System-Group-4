@@ -11,6 +11,7 @@ namespace UI
         public PatientRoomSearch()
         {
             InitializeComponent();
+            UITheme.Apply(this);
             var cs = Config.GetConnectionString();
             if (!string.IsNullOrWhiteSpace(cs)) _service = new RoomService(cs);
         }
