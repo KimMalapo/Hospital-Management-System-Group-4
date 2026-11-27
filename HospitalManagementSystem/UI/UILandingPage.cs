@@ -38,7 +38,19 @@ namespace UI
 
         private void btnBilling_Click(object sender, EventArgs e)
         {
-            UIHelper.ShowView(pnlUCHandler, new BillingUserControl());
+            ShowBilling(null);
+        }
+
+        private void ShowBilling(int? admissionId)
+        {
+            var view = new BillingUserControl(admissionId);
+            view.GoToPaymentRequested += BillingUserControl_GoToPaymentRequested;
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void BillingUserControl_GoToPaymentRequested(object? sender, BillNavigationEventArgs e)
+        {
+            UIHelper.ShowView(pnlUCHandler, new PaymentUserControl(e.BillId));
         }
 
         private void btnServiceCatalog_Click(object sender, EventArgs e)
