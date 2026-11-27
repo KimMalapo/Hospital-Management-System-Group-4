@@ -9,6 +9,7 @@ namespace UI
         public LoginForm()
         {
             InitializeComponent();
+            UITheme.Apply(this);
 
             btnLogin.MouseEnter += BtnLogin_MouseEnter;
             btnLogin.MouseLeave += BtnLogin_MouseLeave;
