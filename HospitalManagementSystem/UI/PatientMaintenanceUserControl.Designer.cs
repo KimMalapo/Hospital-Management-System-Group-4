@@ -72,6 +72,7 @@
             btnUpdate = new Button();
             btnDelete = new Button();
             btnRestore = new Button();
+            btnViewDischargeRecord = new Button();
             chkShowDeleted = new CheckBox();
             pnlMainHandler.SuspendLayout();
             grpPatientDetails.SuspendLayout();
@@ -91,6 +92,7 @@
             pnlMainHandler.Controls.Add(btnUpdate);
             pnlMainHandler.Controls.Add(btnDelete);
             pnlMainHandler.Controls.Add(btnRestore);
+            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
             pnlMainHandler.Location = new Point(1, 2);
             pnlMainHandler.Name = "pnlMainHandler";
             pnlMainHandler.Size = new Size(1490, 970);
@@ -515,6 +517,19 @@
             btnRestore.UseVisualStyleBackColor = false;
             btnRestore.Click += btnRestore_Click;
             // 
+            // btnViewDischargeRecord
+            // 
+            btnViewDischargeRecord.BackColor = Color.LightSteelBlue;
+            btnViewDischargeRecord.Enabled = false;
+            btnViewDischargeRecord.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
+            btnViewDischargeRecord.Location = new Point(1095, 855);
+            btnViewDischargeRecord.Name = "btnViewDischargeRecord";
+            btnViewDischargeRecord.Size = new Size(275, 60);
+            btnViewDischargeRecord.TabIndex = 7;
+            btnViewDischargeRecord.Text = "View Final Record";
+            btnViewDischargeRecord.UseVisualStyleBackColor = false;
+            btnViewDischargeRecord.Click += btnViewDischargeRecord_Click;
+            // 
             // chkShowDeleted
             // 
             chkShowDeleted.AutoSize = true;
@@ -593,6 +608,7 @@
         private Button btnUpdate;
         private Button btnDelete;
         private Button btnRestore;
+        private Button btnViewDischargeRecord;
         private CheckBox chkShowDeleted;
     }
 }
