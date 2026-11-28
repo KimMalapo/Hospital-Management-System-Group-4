@@ -1,10 +1,14 @@
-﻿using BusinessLogic;
+using BusinessLogic;
 
 namespace UI
 {
     /// <summary>Home screen after login: four dashboard numbers and shortcuts to Rooms, Patients and Master Data.</summary>
     public partial class HomeUserControl : UserControl
     {
+        // Raised when the dashboard Patient shortcut is clicked. The main form
+        // handles navigation so the patient screen uses the main content panel.
+        public event EventHandler? PatientsRequested;
+
         public HomeUserControl()
         {
             InitializeComponent();
@@ -73,7 +77,7 @@ namespace UI
             UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
 
         private void btnPatients1_Click(object sender, EventArgs e) =>
-            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
+            PatientsRequested?.Invoke(this, EventArgs.Empty);
 
         private void btnMdata_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<MasterDataUserControl>(pnlUCHandler);

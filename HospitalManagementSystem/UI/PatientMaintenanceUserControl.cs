@@ -22,8 +22,7 @@ namespace UI
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtPatientID.ReadOnly = true;
 
-            // Changed from xbtnViewDischargeRecord
-            btnViewDischargeRecord.Enabled = false;
+            dgvPatients.SelectionChanged += dgvPatients_SelectionChanged;
         }
 
         private void PatientMaintenanceUserControl_Load(object sender, EventArgs e)
