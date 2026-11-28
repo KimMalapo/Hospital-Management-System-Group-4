@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Microsoft.Data.SqlClient;
 using BusinessLogic;
 using Model;
 
@@ -12,6 +13,7 @@ namespace UI
         private PatientService? _patientService;
         private AdmissionService? _admissionService;
         private bool _databaseWarningShown;
+        private bool _suppressSelection; // true while the grid is being refilled
 
         public event EventHandler<int>? DischargeRecordRequested;
 
@@ -21,8 +23,8 @@ namespace UI
             UITheme.Apply(this);
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtPatientID.ReadOnly = true;
-
-            dgvPatients.SelectionChanged += dgvPatients_SelectionChanged;
+            dtpDateOfBirth.MaxDate = DateTime.Today;
+            ResetDateOfBirth();
         }
 
         private void PatientMaintenanceUserControl_Load(object sender, EventArgs e)
@@ -60,16 +62,38 @@ namespace UI
                 foreach (DataRow admission in activeAdmissions.Rows)
                     admissionsByPatient[Convert.ToInt32(admission["PatientID"])] = admission;
 
-                dgvPatients.Rows.Clear();
-                foreach (DataRow patient in patients.Rows)
-                    AddPatientRow(patient, admissionsByPatient);
+                int.TryParse(txtPatientID.Text, out var selectedId);
+
+                _suppressSelection = true;
+                try
+                {
+                    dgvPatients.Rows.Clear();
+                    foreach (DataRow patient in patients.Rows)
+                        AddPatientRow(patient, admissionsByPatient);
+
+                    // WinForms selects the first row by itself; keep only the patient the user picked.
+                    dgvPatients.ClearSelection();
+                    foreach (DataGridViewRow row in dgvPatients.Rows)
+                    {
+                        if (Convert.ToInt32(row.Cells["colPatientID"].Value) != selectedId) continue;
+                        row.Selected = true;
+                        dgvPatients.CurrentCell = row.Cells["colFirstName"];
+                        break;
+                    }
+                }
+                finally
+                {
+                    _suppressSelection = false;
+                }
 
                 _databaseWarningShown = false;
             }
             catch (Exception ex)
             {
                 Logger.Error("PatientMaintenanceUserControl.RefreshPatientTable failed", ex);
-                dgvPatients.Rows.Clear();
+                _suppressSelection = true;
+                try { dgvPatients.Rows.Clear(); }
+                finally { _suppressSelection = false; }
                 if (!_databaseWarningShown)
                 {
                     UIHelper.ShowError("Unable to load patient records. Check the database connection and try again.", "Database error");
@@ -124,7 +148,7 @@ namespace UI
             }
             catch (Exception ex)
             {
-                UIHelper.HandleDatabaseError(ex, "adding patient");
+                ShowServiceError(ex, "adding patient");
             }
         }
 
@@ -153,7 +177,7 @@ namespace UI
             }
             catch (Exception ex)
             {
-                UIHelper.HandleDatabaseError(ex, "updating patient");
+                ShowServiceError(ex, "updating patient");
             }
         }
 
@@ -184,8 +208,10 @@ namespace UI
             }
             catch (Exception ex)
             {
-                UIHelper.HandleDatabaseError(ex, "deactivating patient");
+                ShowServiceError(ex, "deactivating patient");
             }
+
+
         }
 
         // Switches between the normal list and the deactivated (soft-deleted) patients.
@@ -223,22 +249,41 @@ namespace UI
             }
             catch (Exception ex)
             {
-                UIHelper.HandleDatabaseError(ex, "restoring patient");
+                ShowServiceError(ex, "restoring patient");
             }
         }
 
         private void btnClear_Click(object sender, EventArgs e) => ClearPatientForm();
 
+        // Validation, duplicate-patient and "still admitted" messages are shown as warnings; anything else as a database error.
+        private void ShowServiceError(Exception ex, string actionName)
+        {
+            if (ex is SqlException sql && sql.Class < 20 && sql.Number is not (53 or 20 or -2))
+                UIHelper.ShowWarning(this, sql.Message, "Cannot " + actionName);
+            else
+                UIHelper.ShowServiceError(this, ex, actionName);
+        }
+
+        private void ResetDateOfBirth()
+        {
+            dtpDateOfBirth.Value = DateTime.Today;
+            dtpDateOfBirth.Checked = false;
+        }
+
         private void ClearPatientForm()
         {
+            dgvPatients.ClearSelection();
             txtPatientID.Clear();
             txtFirstName.Clear();
             txtLastName.Clear();
-            numAge.Value = 0;
+            ResetDateOfBirth();
             cmbGender.SelectedIndex = -1;
             txtAddress.Clear();
             txtContactNo.Clear();
+            txtEmail.Clear();
             lblAdmissionStatusVal.Text = NotAdmitted;
+            dgvAdmissionHistory.Rows.Clear();
+            btnViewDischargeRecord.Enabled = false;
         }
 
         private bool TryBuildPatient(out Model.Patient patient)
@@ -254,30 +299,60 @@ namespace UI
             {
                 FirstName = txtFirstName.Text.Trim(),
                 LastName = txtLastName.Text.Trim(),
-                DateOfBirth = DateTime.Today.AddYears(-(int)numAge.Value),
+                DateOfBirth = dtpDateOfBirth.Checked ? dtpDateOfBirth.Value.Date : null,
                 Gender = cmbGender.SelectedItem?.ToString(),
-                Address = txtAddress.Text.Trim(),
-                ContactNumber = txtContactNo.Text.Trim()
+                Address = NullIfBlank(txtAddress.Text),
+                ContactNumber = NullIfBlank(txtContactNo.Text),
+                Email = NullIfBlank(txtEmail.Text)
             };
             return true;
         }
 
-        private void dgvPatients_SelectionChanged(object sender, EventArgs e)
-        {
-            if (dgvPatients.SelectedRows.Count == 0) return;
+        private static string? NullIfBlank(string? text) =>
+            string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
-            DataGridViewRow row = dgvPatients.SelectedRows[0];
-            txtPatientID.Text = row.Cells["colPatientID"].Value?.ToString();
-            txtFirstName.Text = row.Cells["colFirstName"].Value?.ToString();
-            txtLastName.Text = row.Cells["colLastName"].Value?.ToString();
-            if (int.TryParse(row.Cells["colAge"].Value?.ToString(), out int age))
+        // Loads the clicked patient into the form from the database, so the exact date of birth and email are kept.
+        private void dgvPatients_SelectionChanged(object? sender, EventArgs e)
+        {
+            if (_suppressSelection || dgvPatients.SelectedRows.Count == 0) return;
+
+            var row = dgvPatients.SelectedRows[0];
+            if (!int.TryParse(Convert.ToString(row.Cells["colPatientID"].Value), out var patientId)) return;
+
+            Model.Patient? patient;
+            try
             {
-                numAge.Value = Math.Max(numAge.Minimum, Math.Min(numAge.Maximum, age));
+                patient = GetPatientService().GetById(patientId);
             }
-            cmbGender.SelectedItem = row.Cells["colGender"].Value?.ToString();
-            txtAddress.Text = row.Cells["colAddress"].Value?.ToString();
-            txtContactNo.Text = row.Cells["colContact"].Value?.ToString();
-            lblAdmissionStatusVal.Text = row.Cells["colAdmissionStatus"].Value?.ToString() ?? NotAdmitted;
+            catch (Exception ex)
+            {
+                UIHelper.HandleDatabaseError(ex, "loading patient");
+                return;
+            }
+            if (patient == null) return;
+
+            txtPatientID.Text = patient.PatientID.ToString();
+            txtFirstName.Text = patient.FirstName;
+            txtLastName.Text = patient.LastName;
+            if (patient.DateOfBirth.HasValue)
+            {
+                var dob = patient.DateOfBirth.Value.Date;
+                dtpDateOfBirth.Value = dob < dtpDateOfBirth.MinDate ? dtpDateOfBirth.MinDate
+                                     : dob > dtpDateOfBirth.MaxDate ? dtpDateOfBirth.MaxDate : dob;
+                dtpDateOfBirth.Checked = true;
+            }
+            else
+            {
+                ResetDateOfBirth();
+            }
+            cmbGender.SelectedItem = patient.Gender;
+            if (cmbGender.SelectedItem == null) cmbGender.SelectedIndex = -1;
+            txtAddress.Text = patient.Address ?? string.Empty;
+            txtContactNo.Text = patient.ContactNumber ?? string.Empty;
+            txtEmail.Text = patient.Email ?? string.Empty;
+            lblAdmissionStatusVal.Text = Convert.ToString(row.Cells["colAdmissionStatus"].Value) ?? NotAdmitted;
+
+            RefreshPatientAdmissions(patientId);
         }
 
         private void RefreshPatientAdmissions(int patientId)

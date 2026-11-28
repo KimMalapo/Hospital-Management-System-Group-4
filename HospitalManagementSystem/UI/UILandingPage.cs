@@ -26,6 +26,9 @@ namespace UI
             UIHelper.ShowView(pnlUCHandler, view);
         }
 
+        // Opens the Payment screen on its own (pick any bill); Billing's "Go to Payment" opens it on that bill.
+        private void btnPayment_Click(object sender, EventArgs e) => ShowPayments();
+
         private void btnActiveAdmissions_Click(object sender, EventArgs e) => ShowActiveAdmissions();
 
         private void btnBilling_Click(object sender, EventArgs e) =>
@@ -54,8 +57,13 @@ namespace UI
         }
 
         // Patient Maintenance is the screen that contains the patient records table.
-        private void ShowPatients() =>
-            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
+        private void ShowPatients()
+        {
+            var view = new PatientMaintenanceUserControl();
+            // "View Final Record" on a discharged admission opens its discharge record.
+            view.DischargeRecordRequested += (_, admissionId) => ShowDischarge(admissionId);
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
 
         private void ReturnToLogin()
         {
@@ -74,6 +82,9 @@ namespace UI
 
         private void btnReports_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<ReportsUserControl>(pnlUCHandler);
+
+        private void btnServiceCatalog_Click(object sender, EventArgs e) =>
+            UIHelper.ShowView<ServiceCatalogUserControl>(pnlUCHandler);
 
         private void btnRoom_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);

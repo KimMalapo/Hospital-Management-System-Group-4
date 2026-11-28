@@ -31,6 +31,8 @@ namespace UI
             _goToPayment.Click += GoToPayment_Click;
             _printStatement.Click += PrintStatement_Click;
             _applyDiscount.Click += ApplyDiscount_Click;
+            _voidBill.Click += VoidBill_Click;
+            _voidBill.Visible = Permissions.IsAllowed(AppAction.VoidBill); // Admin only
             Load += BillingUserControl_Load;
 
             _items.AutoGenerateColumns = true;
@@ -221,6 +223,56 @@ namespace UI
             }
         }
 
+        // Voids the current bill (Admin only). The bill must have no payments; the admission can then be billed again.
+        private void VoidBill_Click(object? sender, EventArgs e)
+        {
+            _errors.Clear();
+            SetMessage(string.Empty);
+
+            if (_bill == null || _billingService == null)
+            {
+                SetMessage("Select a bill to void.");
+                return;
+            }
+
+            if (!Permissions.IsAllowed(AppAction.VoidBill))
+            {
+                SetMessage("Only an Admin can void a bill.");
+                return;
+            }
+
+            if (_bill.AmountPaid > 0)
+            {
+                SetMessage("This bill has payments. Void the payments first (Payment screen), then void the bill.");
+                return;
+            }
+
+            var billNo = _bill.BillNo;
+            var reason = UIHelper.AskText($"Why is bill {billNo} being voided?", "Void bill");
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                SetMessage("A reason is required to void a bill. Nothing was changed.");
+                return;
+            }
+
+            try
+            {
+                _voidBill.Enabled = false;
+                _billingService.Void(_bill.BillID, reason);
+
+                RefreshBill();
+                SetMessage($"Bill {billNo} was voided. You can generate a new bill for this admission.", false);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("BillingUserControl.VoidBill failed", ex);
+                SetMessage(ex is ValidationException or UnauthorizedAccessException
+                    ? ex.Message
+                    : "The bill could not be voided. Please try again.");
+                _voidBill.Enabled = _bill != null && _bill.Status != BillStatus.Voided;
+            }
+        }
+
         private void GoToPayment_Click(object? sender, EventArgs e)
         {
             if (_bill == null)
@@ -346,6 +398,7 @@ namespace UI
                 bill.Status != BillStatus.Voided && bill.Balance > 0;
 
             _printStatement.Enabled = true;
+            _voidBill.Enabled = bill.Status != BillStatus.Voided;
         }
 
         private void ClearBill()
@@ -368,6 +421,7 @@ namespace UI
             _applyDiscount.Enabled = false;
             _goToPayment.Enabled = false;
             _printStatement.Enabled = false;
+            _voidBill.Enabled = false;
 
             _generate.Text = "Generate Bill";
         }

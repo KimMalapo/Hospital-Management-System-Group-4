@@ -46,6 +46,7 @@
             btnAdmission = new Button();
             btnActiveAdmissions = new Button();
             btnBilling = new Button();
+            btnPayment = new Button();
             btnServiceCatalog = new Button();
             label5 = new Label();
             label6 = new Label();
@@ -214,10 +215,21 @@
             btnBilling.UseVisualStyleBackColor = true;
             btnBilling.Click += btnBilling_Click;
             // 
+            // btnPayment
+            // 
+            btnPayment.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnPayment.Location = new Point(33, 492);
+            btnPayment.Name = "btnPayment";
+            btnPayment.Size = new Size(352, 52);
+            btnPayment.TabIndex = 21;
+            btnPayment.Text = "Payment";
+            btnPayment.UseVisualStyleBackColor = true;
+            btnPayment.Click += btnPayment_Click;
+            // 
             // btnSearch
             // 
             btnSearch.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnSearch.Location = new Point(33, 492);
+            btnSearch.Location = new Point(33, 554);
             btnSearch.Name = "btnSearch";
             btnSearch.Size = new Size(352, 52);
             btnSearch.TabIndex = 10;
@@ -228,7 +240,7 @@
             // btnRoom
             // 
             btnRoom.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnRoom.Location = new Point(33, 554);
+            btnRoom.Location = new Point(33, 616);
             btnRoom.Name = "btnRoom";
             btnRoom.Size = new Size(352, 52);
             btnRoom.TabIndex = 11;
@@ -239,7 +251,7 @@
             // btnMasterData
             // 
             btnMasterData.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnMasterData.Location = new Point(33, 616);
+            btnMasterData.Location = new Point(33, 678);
             btnMasterData.Name = "btnMasterData";
             btnMasterData.Size = new Size(352, 52);
             btnMasterData.TabIndex = 12;
@@ -250,7 +262,7 @@
             // btnReports
             // 
             btnReports.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnReports.Location = new Point(33, 682);
+            btnReports.Location = new Point(33, 744);
             btnReports.Name = "btnReports";
             btnReports.Size = new Size(352, 55);
             btnReports.TabIndex = 20;
@@ -258,11 +270,22 @@
             btnReports.UseVisualStyleBackColor = true;
             btnReports.Click += btnReports_Click;
             // 
+            // btnServiceCatalog
+            // 
+            btnServiceCatalog.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnServiceCatalog.Location = new Point(33, 810);
+            btnServiceCatalog.Name = "btnServiceCatalog";
+            btnServiceCatalog.Size = new Size(352, 52);
+            btnServiceCatalog.TabIndex = 13;
+            btnServiceCatalog.Text = "Service Catalog";
+            btnServiceCatalog.UseVisualStyleBackColor = true;
+            btnServiceCatalog.Click += btnServiceCatalog_Click;
+            // 
             // label5
             // 
             label5.AutoSize = true;
             label5.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label5.Location = new Point(87, 756);
+            label5.Location = new Point(87, 858);
             label5.Name = "label5";
             label5.Size = new Size(248, 31);
             label5.TabIndex = 14;
@@ -273,7 +296,7 @@
             label6.AutoSize = true;
             label6.Font = new Font("Yu Gothic Medium", 15F, FontStyle.Bold);
             label6.ForeColor = Color.DimGray;
-            label6.Location = new Point(33, 822);
+            label6.Location = new Point(33, 898);
             label6.Name = "label6";
             label6.Size = new Size(108, 26);
             label6.TabIndex = 15;
@@ -288,6 +311,7 @@
             Controls.Add(btnServiceCatalog);
             Controls.Add(btnSearch);
             Controls.Add(btnBilling);
+            Controls.Add(btnPayment);
             Controls.Add(btnActiveAdmissions);
             Controls.Add(btnAdmission);
             Controls.Add(btnPatientMaintenance);
@@ -331,15 +355,13 @@
         private Button btnReports;
         private Label label5;
         private Label label6;
-        private Button button1;
         private PictureBox pictureBox5;
-        private Button button3;
-        private Button btnRooms;
         private Button btnPatientMaintenance;
         private Button btnSearch;
         private Button btnAdmission;
         private Button btnActiveAdmissions;
         private Button btnBilling;
+        private Button btnPayment;
         private Button btnServiceCatalog;
     }
 }
