@@ -1,3 +1,5 @@
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -6,20 +8,8 @@ using Model;
 
 namespace UI;
 
-public sealed class AdmissionUserControl : UserControl
+public sealed partial class AdmissionUserControl : UserControl
 {
-    private readonly ErrorProvider _errors = new();
-    private readonly System.Windows.Forms.Timer _patientSearchTimer = new() { Interval = 300 };
-    private readonly TextBox _patientSearch = new();
-    private readonly DataGridView _patientsGrid = new();
-    private readonly Label _selectedPatient = new();
-    private readonly Label _status = new();
-    private readonly ComboBox _rooms = new();
-    private readonly ComboBox _departments = new();
-    private readonly ComboBox _diagnoses = new();
-    private readonly TextBox _physician = new();
-    private readonly TextBox _reason = new();
-    private readonly DateTimePicker _admitDate = new();
     private PatientService? _patientService;
     private RoomService? _roomService;
     private LookupService? _lookupService;
@@ -31,15 +21,8 @@ public sealed class AdmissionUserControl : UserControl
 
     public AdmissionUserControl()
     {
-        Dock = DockStyle.Fill;
-        AutoScroll = true;
-        _errors.ContainerControl = this;
-        _errors.BlinkStyle = ErrorBlinkStyle.NeverBlink;
-        BuildLayout();
-        Load += AdmissionUserControl_Load;
-        _patientSearch.TextChanged += PatientSearch_TextChanged;
-        _patientSearchTimer.Tick += PatientSearchTimer_Tick;
-        _patientsGrid.SelectionChanged += PatientsGrid_SelectionChanged;
+        InitializeComponent();
+        UITheme.Apply(this);
     }
 
     public void FocusPatient(int? patientId = null)
@@ -62,333 +45,6 @@ public sealed class AdmissionUserControl : UserControl
         {
             _patientSearch.Focus();
         }
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _patientSearchTimer.Dispose();
-            _errors.Dispose();
-        }
-        base.Dispose(disposing);
-    }
-
-    private void BuildLayout()
-    {
-        BackColor = Color.FromArgb(245, 247, 251);
-        Font = new Font("Segoe UI", 9.5F);
-
-        var root = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(28, 22, 28, 24),
-            ColumnCount = 1,
-            RowCount = 2,
-            BackColor = BackColor
-        };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        var heading = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2,
-            Margin = Padding.Empty
-        };
-        heading.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-        heading.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        heading.Controls.Add(new Label
-        {
-            Text = "Admit a patient",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 20, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 41, 59),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 0);
-        heading.Controls.Add(new Label
-        {
-            Text = "Choose a registered patient, assign a room, and record the admission details.",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9.5F),
-            ForeColor = Color.FromArgb(100, 116, 139),
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 1);
-        root.Controls.Add(heading, 0, 0);
-
-        var content = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 1,
-            Margin = Padding.Empty
-        };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 46));
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 18));
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 54));
-        root.Controls.Add(content, 0, 1);
-
-        var patientGroup = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(18),
-            Margin = Padding.Empty
-        };
-        var patientLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 5,
-            Margin = Padding.Empty
-        };
-        patientLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        patientLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-        patientLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
-        patientLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        patientLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50));
-        patientLayout.Controls.Add(CreateSectionHeading("01", "Select patient", "Search by patient ID or name"), 0, 0);
-        patientLayout.Controls.Add(new Label
-        {
-            Text = "Patient search",
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            ForeColor = Color.FromArgb(71, 85, 105),
-            TextAlign = ContentAlignment.BottomLeft,
-            Margin = new Padding(0, 3, 0, 2)
-        }, 0, 1);
-        _patientSearch.Dock = DockStyle.Fill;
-        _patientSearch.Font = new Font("Segoe UI", 10);
-        _patientSearch.PlaceholderText = "Enter patient ID or name";
-        _patientSearch.Margin = new Padding(0, 2, 0, 8);
-        patientLayout.Controls.Add(_patientSearch, 0, 2);
-        ConfigurePatientsGrid();
-        patientLayout.Controls.Add(_patientsGrid, 0, 3);
-        _selectedPatient.Text = "No patient selected";
-        _selectedPatient.Dock = DockStyle.Fill;
-        _selectedPatient.TextAlign = ContentAlignment.MiddleLeft;
-        _selectedPatient.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-        _selectedPatient.ForeColor = Color.FromArgb(30, 64, 175);
-        _selectedPatient.BackColor = Color.FromArgb(239, 246, 255);
-        _selectedPatient.Padding = new Padding(12, 0, 12, 0);
-        _selectedPatient.Margin = new Padding(0, 10, 0, 0);
-        patientLayout.Controls.Add(_selectedPatient, 0, 4);
-        patientGroup.Controls.Add(patientLayout);
-
-        var detailsGroup = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle,
-            Padding = new Padding(18),
-            Margin = Padding.Empty
-        };
-        var details = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 9,
-            Margin = Padding.Empty
-        };
-        details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 31));
-        details.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 69));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 106));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 54));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 38));
-        details.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        details.Controls.Add(CreateSectionHeading("02", "Admission details", "Required fields are marked with an asterisk"), 0, 0);
-        details.SetColumnSpan(details.GetControlFromPosition(0, 0)!, 2);
-
-        ConfigureLookupCombo(_rooms);
-        ConfigureLookupCombo(_departments);
-        ConfigureLookupCombo(_diagnoses);
-        AddField(details, 1, "Available room *", _rooms);
-        AddField(details, 2, "Department *", _departments);
-        AddField(details, 3, "Diagnosis *", _diagnoses);
-
-        _physician.Dock = DockStyle.Fill;
-        _physician.MaxLength = 200;
-        _physician.PlaceholderText = "Enter physician name";
-        _physician.Margin = new Padding(3, 8, 3, 8);
-        AddField(details, 4, "Physician *", _physician);
-
-        _reason.Dock = DockStyle.Fill;
-        _reason.Multiline = true;
-        _reason.MaxLength = 500;
-        _reason.ScrollBars = ScrollBars.Vertical;
-        _reason.PlaceholderText = "Add context for this admission (optional)";
-        _reason.Margin = new Padding(3, 8, 3, 8);
-        AddField(details, 5, "Reason", _reason);
-
-        _admitDate.Dock = DockStyle.Fill;
-        _admitDate.Format = DateTimePickerFormat.Custom;
-        _admitDate.CustomFormat = "MMM dd, yyyy  |  hh:mm tt";
-        _admitDate.ShowUpDown = false;
-        _admitDate.Margin = new Padding(3, 8, 3, 8);
-        AddField(details, 6, "Admission date *", _admitDate);
-
-        _status.Dock = DockStyle.Fill;
-        _status.ForeColor = Color.Firebrick;
-        _status.Font = new Font("Segoe UI", 9);
-        _status.TextAlign = ContentAlignment.MiddleLeft;
-        details.Controls.Add(_status, 0, 7);
-        details.SetColumnSpan(_status, 2);
-
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.RightToLeft,
-            WrapContents = false,
-            Padding = new Padding(0, 8, 0, 0),
-            Margin = Padding.Empty
-        };
-        var admitButton = new Button
-        {
-            Text = "Create admission",
-            Width = 170,
-            Height = 38,
-            BackColor = Color.FromArgb(37, 99, 235),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-            Cursor = Cursors.Hand,
-            Margin = new Padding(8, 0, 0, 0),
-            UseVisualStyleBackColor = false
-        };
-        admitButton.FlatAppearance.BorderSize = 0;
-        admitButton.Click += AdmitButton_Click;
-        var clearButton = new Button
-        {
-            Text = "Clear form",
-            Width = 105,
-            Height = 38,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = Color.White,
-            ForeColor = Color.FromArgb(71, 85, 105),
-            Font = new Font("Segoe UI", 9.5F),
-            Cursor = Cursors.Hand,
-            Margin = new Padding(8, 0, 0, 0)
-        };
-        clearButton.FlatAppearance.BorderColor = Color.FromArgb(203, 213, 225);
-        clearButton.Click += (_, _) => ClearForm();
-        buttons.Controls.Add(admitButton);
-        buttons.Controls.Add(clearButton);
-        details.Controls.Add(buttons, 0, 8);
-        details.SetColumnSpan(buttons, 2);
-        detailsGroup.Controls.Add(details);
-
-        content.Controls.Add(patientGroup, 0, 0);
-        content.Controls.Add(detailsGroup, 2, 0);
-        Controls.Add(root);
-    }
-
-    private static Control CreateSectionHeading(string step, string title, string description)
-    {
-        var heading = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 2,
-            Margin = Padding.Empty
-        };
-        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 38));
-        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        heading.RowStyles.Add(new RowStyle(SizeType.Absolute, 25));
-        heading.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        heading.Controls.Add(new Label
-        {
-            Text = step,
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(239, 246, 255),
-            ForeColor = Color.FromArgb(37, 99, 235),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Margin = new Padding(0, 0, 8, 0)
-        }, 0, 0);
-        heading.SetRowSpan(heading.GetControlFromPosition(0, 0)!, 2);
-        heading.Controls.Add(new Label
-        {
-            Text = title,
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 11, FontStyle.Bold),
-            ForeColor = Color.FromArgb(30, 41, 59),
-            TextAlign = ContentAlignment.MiddleLeft,
-            Margin = Padding.Empty
-        }, 1, 0);
-        heading.Controls.Add(new Label
-        {
-            Text = description,
-            Dock = DockStyle.Fill,
-            Font = new Font("Segoe UI", 8.5F),
-            ForeColor = Color.FromArgb(100, 116, 139),
-            TextAlign = ContentAlignment.MiddleLeft,
-            Margin = Padding.Empty
-        }, 1, 1);
-        return heading;
-    }
-
-    private void ConfigurePatientsGrid()
-    {
-        _patientsGrid.Dock = DockStyle.Fill;
-        _patientsGrid.ReadOnly = true;
-        _patientsGrid.AllowUserToAddRows = false;
-        _patientsGrid.AllowUserToDeleteRows = false;
-        _patientsGrid.AllowUserToResizeRows = false;
-        _patientsGrid.AutoGenerateColumns = false;
-        _patientsGrid.MultiSelect = false;
-        _patientsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-        _patientsGrid.RowHeadersVisible = false;
-        _patientsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        _patientsGrid.BackgroundColor = Color.White;
-        _patientsGrid.BorderStyle = BorderStyle.None;
-        _patientsGrid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-        _patientsGrid.GridColor = Color.FromArgb(226, 232, 240);
-        _patientsGrid.EnableHeadersVisualStyles = false;
-        _patientsGrid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-        _patientsGrid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
-        _patientsGrid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(71, 85, 105);
-        _patientsGrid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9, FontStyle.Bold);
-        _patientsGrid.ColumnHeadersHeight = 38;
-        _patientsGrid.DefaultCellStyle.BackColor = Color.White;
-        _patientsGrid.DefaultCellStyle.ForeColor = Color.FromArgb(51, 65, 85);
-        _patientsGrid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(219, 234, 254);
-        _patientsGrid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(30, 41, 59);
-        _patientsGrid.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F);
-        _patientsGrid.RowTemplate.Height = 36;
-        _patientsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PatientID", DataPropertyName = "PatientID", HeaderText = "Patient ID", FillWeight = 22 });
-        _patientsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PatientName", DataPropertyName = "PatientName", HeaderText = "Patient", FillWeight = 58 });
-        _patientsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Age", DataPropertyName = "Age", HeaderText = "Age", FillWeight = 20 });
-    }
-
-    private static void ConfigureLookupCombo(ComboBox combo)
-    {
-        combo.Dock = DockStyle.Fill;
-        combo.DropDownStyle = ComboBoxStyle.DropDownList;
-        combo.Font = new Font("Segoe UI", 10);
-        combo.Margin = new Padding(3, 8, 3, 8);
-    }
-
-    private static void AddField(TableLayoutPanel layout, int row, string label, Control input)
-    {
-        layout.Controls.Add(new Label
-        {
-            Text = label,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            ForeColor = Color.FromArgb(71, 85, 105),
-            Margin = new Padding(0, 4, 8, 4)
-        }, 0, row);
-        input.Margin = input.Margin == Padding.Empty ? new Padding(3, 8, 3, 8) : input.Margin;
-        layout.Controls.Add(input, 1, row);
     }
 
     private void AdmissionUserControl_Load(object? sender, EventArgs e)
@@ -556,6 +212,11 @@ public sealed class AdmissionUserControl : UserControl
             _status.ForeColor = Color.Firebrick;
             _status.Text = "The admission could not be saved. Check the details and try again.";
         }
+    }
+
+    private void ClearButton_Click(object? sender, EventArgs e)
+    {
+        ClearForm();
     }
 
     private bool ValidateAdmission()

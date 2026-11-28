@@ -34,6 +34,7 @@ namespace UI
         {
             _initialBillId = billId;
             InitializeComponent();
+            UITheme.Apply(this);
         }
 
         private void PaymentUserControl_Load(object? sender, EventArgs e)
@@ -121,7 +122,19 @@ namespace UI
         {
             var method = cmbMethod.SelectedItem?.ToString();
             var requiresRef = !string.IsNullOrEmpty(method) && PaymentMethod.RequiresReference(method);
-            lblReferenceCaption.Text = requiresRef ? "Reference number (required)" : "Reference number (optional)";
+            lblReferenceCaption.Text = requiresRef ? "Reference Number (Required):" : "Reference Number (Optional):";
+        }
+
+        private void Payments_SelectionChanged(object? sender, EventArgs e)
+        {
+            UpdateHistoryActionButtons();
+        }
+
+        private void UpdateHistoryActionButtons()
+        {
+            var hasSelection = dgvPayments.SelectedRows.Count > 0
+                               && dgvPayments.SelectedRows[0].Cells[colPaymentId.Name].Value != null;
+            btnPrintReceipt.Enabled = hasSelection;
         }
 
         private void RefreshPaymentView(bool preserveMessage = false)
@@ -153,6 +166,7 @@ namespace UI
                 lblBillStatus.Text = _bill.Status;
 
                 dgvPayments.DataSource = _paymentService.GetByBill(_bill.BillID);
+                UpdateHistoryActionButtons();
 
                 var isPaid = string.Equals(_bill.Status, BillStatus.Paid, StringComparison.OrdinalIgnoreCase) || _bill.Balance <= 0m;
                 var isVoided = string.Equals(_bill.Status, BillStatus.Voided, StringComparison.OrdinalIgnoreCase);
@@ -241,6 +255,33 @@ namespace UI
             }
         }
 
+        private void PrintReceipt_Click(object? sender, EventArgs e)
+        {
+            if (dgvPayments.SelectedRows.Count == 0)
+            {
+                SetMessage("Select a payment row in the history table to print its receipt.");
+                return;
+            }
+
+            var row = dgvPayments.SelectedRows[0];
+            if (!int.TryParse(Convert.ToString(row.Cells[colPaymentId.Name].Value), out var paymentId) || paymentId <= 0)
+            {
+                SetMessage("Unable to determine the selected payment ID.");
+                return;
+            }
+
+            try
+            {
+                using var doc = new UI.Printing.ReceiptPrintDocument(paymentId, Config.GetConnectionString());
+                UI.Printing.PrintHelper.ShowPreview(this, doc);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("PaymentUserControl.PrintReceipt failed", ex);
+                SetMessage("The receipt could not be opened for printing.");
+            }
+        }
+
         private void VoidPayment_Click(object? sender, EventArgs e)
         {
             if (_bill == null || _paymentService == null)
@@ -298,7 +339,7 @@ namespace UI
                 MinimizeBox = false,
                 ClientSize = new Size(440, 190),
                 BackColor = Color.White,
-                Font = new Font("Segoe UI", 9.5F)
+                Font = new Font("Yu Gothic", 10F)
             };
 
             var lblPrompt = new Label
@@ -318,22 +359,20 @@ namespace UI
 
             var btnConfirm = new Button
             {
-                Text = "Confirm void",
-                BackColor = Color.FromArgb(185, 28, 28),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                Location = new Point(226, 132),
-                Size = new Size(105, 34)
+                Text = "Confirm Void",
+                BackColor = Color.MistyRose,
+                Font = new Font("Yu Gothic Medium", 10F, FontStyle.Bold),
+                Location = new Point(216, 132),
+                Size = new Size(115, 36)
             };
-            btnConfirm.FlatAppearance.BorderSize = 0;
 
             var btnCancel = new Button
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
+                Font = new Font("Yu Gothic Medium", 10F, FontStyle.Bold),
                 Location = new Point(339, 132),
-                Size = new Size(81, 34)
+                Size = new Size(81, 36)
             };
 
             btnConfirm.Click += (_, _) =>
@@ -421,6 +460,7 @@ namespace UI
             lblBalance.Text = FormatMoney(0m);
             lblBillStatus.Text = "-";
             dgvPayments.DataSource = null;
+            btnPrintReceipt.Enabled = false;
             SetEntryEnabled(false);
         }
 

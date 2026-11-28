@@ -8,13 +8,15 @@ namespace UI
     /// <summary>
     /// The single place the app reads configuration from.
     /// Order of precedence for the connection string:
-    ///   1. HMS_CONNECTION_STRING environment variable
-    ///   2. ConnectionStrings__DefaultConnection environment variable
-    ///   3. appsettings.Local.json  (per-machine, git-ignored)
-    ///   4. appsettings.json        (shared defaults)
+    /// 1. HMS_CONNECTION_STRING environment variable
+    /// 2. ConnectionStrings__DefaultConnection environment variable
+    /// 3. appsettings.Local.json (per-machine, git-ignored)
+    /// 4. appsettings.json (shared defaults)
     /// </summary>
     public static class Config
     {
+        public record HospitalInfo(string Name, string Address, string Contact);
+
         private static IConfiguration? _config;
 
         private static IConfiguration Configuration
@@ -32,6 +34,16 @@ namespace UI
                 }
                 return _config;
             }
+        }
+
+        public static HospitalInfo GetHospitalInfo()
+        {
+            var section = Configuration.GetSection("Hospital");
+            return new HospitalInfo(
+                Name: section["Name"] ?? "Alexis General Hospital",
+                Address: section["Address"] ?? "123 Healthcare Ave., Metro Manila",
+                Contact: section["Contact"] ?? "Tel: (02) 8123-4567"
+            );
         }
 
         public static string GetConnectionString()
