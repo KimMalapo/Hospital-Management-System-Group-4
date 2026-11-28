@@ -73,7 +73,6 @@
             btnUpdate = new Button();
             btnDelete = new Button();
             btnRestore = new Button();
-            btnViewDischargeRecord = new Button();
             pnlMainHandler.SuspendLayout();
             grpPatientDetails.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numAge).BeginInit();
@@ -85,7 +84,7 @@
             // pnlMainHandler
             // 
             pnlMainHandler.BackColor = SystemColors.ActiveBorder;
-            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
+
             pnlMainHandler.Controls.Add(lblTitle);
             pnlMainHandler.Controls.Add(grpPatientDetails);
             pnlMainHandler.Controls.Add(grpList);
@@ -93,7 +92,6 @@
             pnlMainHandler.Controls.Add(btnUpdate);
             pnlMainHandler.Controls.Add(btnDelete);
             pnlMainHandler.Controls.Add(btnRestore);
-            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
             pnlMainHandler.Location = new Point(1, 2);
             pnlMainHandler.Name = "pnlMainHandler";
             pnlMainHandler.Size = new Size(1490, 970);
@@ -532,15 +530,6 @@
             // 
             // btnViewDischargeRecord
             // 
-            btnViewDischargeRecord.BackColor = Color.LavenderBlush;
-            btnViewDischargeRecord.Enabled = false;
-            btnViewDischargeRecord.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
-            btnViewDischargeRecord.Location = new Point(1098, 855);
-            btnViewDischargeRecord.Name = "btnViewDischargeRecord";
-            btnViewDischargeRecord.Size = new Size(250, 60);
-            btnViewDischargeRecord.TabIndex = 7;
-            btnViewDischargeRecord.Text = "View Discharge Record";
-            btnViewDischargeRecord.UseVisualStyleBackColor = false;
             // 
             // PatientMaintenanceUserControl
             // 
@@ -610,6 +599,5 @@
         private Button btnRestore;
         private Button btnViewDischargeRecord;
         private CheckBox chkShowDeleted;
-        private Button btnViewDischargeRecord;
     }
 }
