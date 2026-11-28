@@ -88,7 +88,7 @@ namespace UI
 
             if (e.Action == ActiveAdmissionAction.ViewBill)
             {
-                UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));
+                ShowBilling(e.AdmissionId);
                 return;
             }
 
@@ -101,6 +101,32 @@ namespace UI
 
             // Charges and discharges change the list, so reload it.
             (sender as ActiveAdmissionsUserControl)?.RefreshAdmissions();
+        }
+
+        private void ShowBilling(int? admissionId = null)
+        {
+            var view = admissionId.HasValue
+                ? new BillingUserControl(admissionId.Value)
+                : new BillingUserControl();
+            view.GoToPaymentRequested += (_, e) => ShowPayments(e.BillId);
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void ShowPayments(int? billId = null)
+        {
+            var view = billId.HasValue
+                ? new PaymentUserControl(billId.Value)
+                : new PaymentUserControl();
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        private void ShowDischarge(int? admissionId = null)
+        {
+            var view = admissionId.HasValue
+                ? new DischargeUserControl(admissionId.Value)
+                : new DischargeUserControl();
+            view.PatientDischarged += (_, _) => ShowActiveAdmissions();
+            UIHelper.ShowView(pnlUCHandler, view);
         }
     }
 }

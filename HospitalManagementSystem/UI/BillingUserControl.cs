@@ -2,7 +2,6 @@
 using System;
 using System.Data;
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 using BusinessLogic;
 using Model;
@@ -85,10 +84,15 @@ namespace UI
             }
             finally
             {
-                _loading = false;
+                row["AdmissionDisplay"] = $"{row["AdmissionNo"]} | {row["PatientName"]} | Room {row["RoomNo"]} | {row["Status"]}";
             }
-
-            RefreshBill();
+            _admissions.DataSource = admissions;
+            _admissions.DisplayMember = "AdmissionDisplay";
+            _admissions.ValueMember = "AdmissionID";
+            if (_initialAdmissionId.HasValue)
+                _admissions.SelectedValue = _initialAdmissionId.Value;
+            else if (_admissions.Items.Count > 0)
+                _admissions.SelectedIndex = 0;
         }
 
         private void Admissions_SelectedIndexChanged(
@@ -100,8 +104,22 @@ namespace UI
                 RefreshBill();
             }
         }
+        finally
+        {
+            _loading = false;
+        }
+        RefreshBill();
+    }
 
-        private void RefreshBill()
+    private void Admissions_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (!_loading) RefreshBill();
+    }
+
+    private void RefreshBill()
+    {
+        _errors.Clear();
+        if (_billingService == null || _admissions.SelectedValue is not int admissionId)
         {
             errProvider.Clear();
             SetMessage(string.Empty);
@@ -109,7 +127,12 @@ namespace UI
             if (_billingService == null ||
                 cmbAdmissions.SelectedValue is not int admissionId)
             {
-                ClearBill();
+                _items.DataSource = null;
+                SetBillTotals(null);
+                _generate.Enabled = IsSelectedAdmissionActive();
+                _goToPayment.Enabled = false;
+                _printStatement.Enabled = false;
+                SetMessage("No bill exists yet. Generate one to calculate the room stay and posted charges.", false);
                 return;
             }
 
@@ -154,6 +177,7 @@ namespace UI
                 _loading = false;
             }
         }
+    }
 
         private void Generate_Click(object? sender, EventArgs e)
         {
@@ -348,6 +372,7 @@ namespace UI
                 );
             }
         }
+    }
 
         /// <summary>
         /// Validates the discount amount and required reason.
@@ -468,6 +493,7 @@ namespace UI
             txtDiscountReason.Enabled = canEdit;
             btnApplyDiscount.Enabled = canEdit;
         }
+    }
 
         private void SetMessage(
             string text,
@@ -486,7 +512,7 @@ namespace UI
         }
     }
 
-    public sealed class BillNavigationEventArgs : EventArgs
+    private void SetMessage(string text, bool isError = true)
     {
         public int BillId { get; }
 

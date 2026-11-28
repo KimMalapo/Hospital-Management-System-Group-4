@@ -93,6 +93,7 @@
             pnlMainHandler.Controls.Add(btnUpdate);
             pnlMainHandler.Controls.Add(btnDelete);
             pnlMainHandler.Controls.Add(btnRestore);
+            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
             pnlMainHandler.Location = new Point(1, 2);
             pnlMainHandler.Name = "pnlMainHandler";
             pnlMainHandler.Size = new Size(1490, 970);
@@ -607,6 +608,7 @@
         private Button btnUpdate;
         private Button btnDelete;
         private Button btnRestore;
+        private Button btnViewDischargeRecord;
         private CheckBox chkShowDeleted;
         private Button btnViewDischargeRecord;
     }

@@ -7,9 +7,9 @@
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
+        private System.Windows.Forms.Panel pnlMainHandler;
         private System.Windows.Forms.Label lblTitle;
-        private System.Windows.Forms.Label lblSubtitle;
-        private System.Windows.Forms.Panel pnlBillCard;
+        private System.Windows.Forms.GroupBox grpBillSelection;
         private System.Windows.Forms.Label lblBillCaption;
         private System.Windows.Forms.ComboBox cmbBills;
         private System.Windows.Forms.Label lblBillNoCaption;
@@ -22,8 +22,8 @@
         private System.Windows.Forms.Label lblBalance;
         private System.Windows.Forms.Label lblStatusCaption;
         private System.Windows.Forms.Label lblBillStatus;
-        private System.Windows.Forms.Panel pnlHistoryCard;
-        private System.Windows.Forms.Label lblHistoryTitle;
+        private System.Windows.Forms.GroupBox grpHistory;
+        private System.Windows.Forms.Button btnPrintReceipt;
         private System.Windows.Forms.Button btnVoidPayment;
         private System.Windows.Forms.DataGridView dgvPayments;
         private System.Windows.Forms.DataGridViewTextBoxColumn colPaymentId;
@@ -34,8 +34,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn colReferenceNo;
         private System.Windows.Forms.DataGridViewTextBoxColumn colReceivedBy;
         private System.Windows.Forms.DataGridViewTextBoxColumn colStatus;
-        private System.Windows.Forms.Panel pnlPostCard;
-        private System.Windows.Forms.Label lblPostTitle;
+        private System.Windows.Forms.GroupBox grpPostPayment;
         private System.Windows.Forms.Label lblAmountCaption;
         private System.Windows.Forms.TextBox txtAmount;
         private System.Windows.Forms.Label lblMethodCaption;
@@ -68,14 +67,12 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle headerCellStyle = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle defaultCellStyle = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dateCellStyle = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle amountCellStyle = new System.Windows.Forms.DataGridViewCellStyle();
 
+            pnlMainHandler = new System.Windows.Forms.Panel();
             lblTitle = new System.Windows.Forms.Label();
-            lblSubtitle = new System.Windows.Forms.Label();
-            pnlBillCard = new System.Windows.Forms.Panel();
+            grpBillSelection = new System.Windows.Forms.GroupBox();
             lblBillCaption = new System.Windows.Forms.Label();
             cmbBills = new System.Windows.Forms.ComboBox();
             lblBillNoCaption = new System.Windows.Forms.Label();
@@ -88,8 +85,8 @@
             lblBalance = new System.Windows.Forms.Label();
             lblStatusCaption = new System.Windows.Forms.Label();
             lblBillStatus = new System.Windows.Forms.Label();
-            pnlHistoryCard = new System.Windows.Forms.Panel();
-            lblHistoryTitle = new System.Windows.Forms.Label();
+            grpHistory = new System.Windows.Forms.GroupBox();
+            btnPrintReceipt = new System.Windows.Forms.Button();
             btnVoidPayment = new System.Windows.Forms.Button();
             dgvPayments = new System.Windows.Forms.DataGridView();
             colPaymentId = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -100,8 +97,7 @@
             colReferenceNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colReceivedBy = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            pnlPostCard = new System.Windows.Forms.Panel();
-            lblPostTitle = new System.Windows.Forms.Label();
+            grpPostPayment = new System.Windows.Forms.GroupBox();
             lblAmountCaption = new System.Windows.Forms.Label();
             txtAmount = new System.Windows.Forms.TextBox();
             lblMethodCaption = new System.Windows.Forms.Label();
@@ -112,82 +108,82 @@
             lblMessage = new System.Windows.Forms.Label();
             errProvider = new System.Windows.Forms.ErrorProvider(components);
 
-            pnlBillCard.SuspendLayout();
-            pnlHistoryCard.SuspendLayout();
+            pnlMainHandler.SuspendLayout();
+            grpBillSelection.SuspendLayout();
+            grpHistory.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvPayments).BeginInit();
-            pnlPostCard.SuspendLayout();
+            grpPostPayment.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)errProvider).BeginInit();
             SuspendLayout();
+
+            // 
+            // pnlMainHandler
+            // 
+            pnlMainHandler.BackColor = System.Drawing.SystemColors.ControlLight;
+            pnlMainHandler.Controls.Add(lblTitle);
+            pnlMainHandler.Controls.Add(grpBillSelection);
+            pnlMainHandler.Controls.Add(grpHistory);
+            pnlMainHandler.Controls.Add(grpPostPayment);
+            pnlMainHandler.Location = new System.Drawing.Point(1, 2);
+            pnlMainHandler.Name = "pnlMainHandler";
+            pnlMainHandler.Size = new System.Drawing.Size(1490, 970);
+            pnlMainHandler.TabIndex = 0;
 
             // 
             // lblTitle
             // 
             lblTitle.AutoSize = true;
-            lblTitle.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold);
-            lblTitle.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblTitle.Location = new System.Drawing.Point(35, 22);
+            lblTitle.Font = new System.Drawing.Font("Yu Gothic", 24F, System.Drawing.FontStyle.Bold);
+            lblTitle.Location = new System.Drawing.Point(35, 25);
             lblTitle.Name = "lblTitle";
-            lblTitle.Size = new System.Drawing.Size(134, 37);
+            lblTitle.Size = new System.Drawing.Size(375, 42);
             lblTitle.TabIndex = 0;
-            lblTitle.Text = "Payments";
+            lblTitle.Text = "Payment Management";
 
             // 
-            // lblSubtitle
+            // grpBillSelection
             // 
-            lblSubtitle.AutoSize = true;
-            lblSubtitle.Font = new System.Drawing.Font("Segoe UI", 10F);
-            lblSubtitle.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblSubtitle.Location = new System.Drawing.Point(37, 62);
-            lblSubtitle.Name = "lblSubtitle";
-            lblSubtitle.Size = new System.Drawing.Size(422, 19);
-            lblSubtitle.TabIndex = 1;
-            lblSubtitle.Text = "Record patient payments, issue receipts, and review payment history.";
-
-            // 
-            // pnlBillCard
-            // 
-            pnlBillCard.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            pnlBillCard.BackColor = System.Drawing.Color.White;
-            pnlBillCard.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            pnlBillCard.Controls.Add(lblBillStatus);
-            pnlBillCard.Controls.Add(lblStatusCaption);
-            pnlBillCard.Controls.Add(lblBalance);
-            pnlBillCard.Controls.Add(lblBalanceCaption);
-            pnlBillCard.Controls.Add(lblPaid);
-            pnlBillCard.Controls.Add(lblPaidCaption);
-            pnlBillCard.Controls.Add(lblTotal);
-            pnlBillCard.Controls.Add(lblTotalCaption);
-            pnlBillCard.Controls.Add(lblBillNo);
-            pnlBillCard.Controls.Add(lblBillNoCaption);
-            pnlBillCard.Controls.Add(cmbBills);
-            pnlBillCard.Controls.Add(lblBillCaption);
-            pnlBillCard.Location = new System.Drawing.Point(35, 96);
-            pnlBillCard.Name = "pnlBillCard";
-            pnlBillCard.Size = new System.Drawing.Size(1430, 146);
-            pnlBillCard.TabIndex = 2;
+            grpBillSelection.BackColor = System.Drawing.Color.WhiteSmoke;
+            grpBillSelection.Controls.Add(lblBillCaption);
+            grpBillSelection.Controls.Add(cmbBills);
+            grpBillSelection.Controls.Add(lblBillNoCaption);
+            grpBillSelection.Controls.Add(lblBillNo);
+            grpBillSelection.Controls.Add(lblTotalCaption);
+            grpBillSelection.Controls.Add(lblTotal);
+            grpBillSelection.Controls.Add(lblPaidCaption);
+            grpBillSelection.Controls.Add(lblPaid);
+            grpBillSelection.Controls.Add(lblBalanceCaption);
+            grpBillSelection.Controls.Add(lblBalance);
+            grpBillSelection.Controls.Add(lblStatusCaption);
+            grpBillSelection.Controls.Add(lblBillStatus);
+            grpBillSelection.Font = new System.Drawing.Font("Yu Gothic Medium", 12F, System.Drawing.FontStyle.Bold);
+            grpBillSelection.Location = new System.Drawing.Point(35, 85);
+            grpBillSelection.Name = "grpBillSelection";
+            grpBillSelection.Size = new System.Drawing.Size(1415, 165);
+            grpBillSelection.TabIndex = 1;
+            grpBillSelection.TabStop = false;
+            grpBillSelection.Text = "Admission & Bill Summary";
 
             // 
             // lblBillCaption
             // 
             lblBillCaption.AutoSize = true;
-            lblBillCaption.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            lblBillCaption.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105);
-            lblBillCaption.Location = new System.Drawing.Point(20, 14);
+            lblBillCaption.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            lblBillCaption.Location = new System.Drawing.Point(25, 42);
             lblBillCaption.Name = "lblBillCaption";
-            lblBillCaption.Size = new System.Drawing.Size(102, 17);
+            lblBillCaption.Size = new System.Drawing.Size(118, 20);
             lblBillCaption.TabIndex = 0;
-            lblBillCaption.Text = "Admission / Bill";
+            lblBillCaption.Text = "Admission / Bill:";
 
             // 
             // cmbBills
             // 
-            cmbBills.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             cmbBills.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            cmbBills.Font = new System.Drawing.Font("Segoe UI", 10.5F);
+            cmbBills.Font = new System.Drawing.Font("Yu Gothic", 11F);
             cmbBills.FormattingEnabled = true;
-            cmbBills.Location = new System.Drawing.Point(20, 38);
+            cmbBills.Location = new System.Drawing.Point(165, 38);
             cmbBills.Name = "cmbBills";
-            cmbBills.Size = new System.Drawing.Size(1388, 27);
+            cmbBills.Size = new System.Drawing.Size(1225, 27);
             cmbBills.TabIndex = 1;
             cmbBills.SelectedIndexChanged += Bills_SelectedIndexChanged;
 
@@ -195,23 +191,22 @@
             // lblBillNoCaption
             // 
             lblBillNoCaption.AutoSize = true;
-            lblBillNoCaption.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lblBillNoCaption.Font = new System.Drawing.Font("Yu Gothic", 10F);
             lblBillNoCaption.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblBillNoCaption.Location = new System.Drawing.Point(20, 82);
+            lblBillNoCaption.Location = new System.Drawing.Point(25, 88);
             lblBillNoCaption.Name = "lblBillNoCaption";
-            lblBillNoCaption.Size = new System.Drawing.Size(78, 15);
+            lblBillNoCaption.Size = new System.Drawing.Size(87, 18);
             lblBillNoCaption.TabIndex = 2;
-            lblBillNoCaption.Text = "Bill number";
+            lblBillNoCaption.Text = "Bill Number:";
 
             // 
             // lblBillNo
             // 
             lblBillNo.AutoSize = true;
-            lblBillNo.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            lblBillNo.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblBillNo.Location = new System.Drawing.Point(20, 103);
+            lblBillNo.Font = new System.Drawing.Font("Yu Gothic Medium", 13F, System.Drawing.FontStyle.Bold);
+            lblBillNo.Location = new System.Drawing.Point(25, 112);
             lblBillNo.Name = "lblBillNo";
-            lblBillNo.Size = new System.Drawing.Size(19, 21);
+            lblBillNo.Size = new System.Drawing.Size(22, 23);
             lblBillNo.TabIndex = 3;
             lblBillNo.Text = "-";
 
@@ -219,23 +214,22 @@
             // lblTotalCaption
             // 
             lblTotalCaption.AutoSize = true;
-            lblTotalCaption.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lblTotalCaption.Font = new System.Drawing.Font("Yu Gothic", 10F);
             lblTotalCaption.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblTotalCaption.Location = new System.Drawing.Point(310, 82);
+            lblTotalCaption.Location = new System.Drawing.Point(310, 88);
             lblTotalCaption.Name = "lblTotalCaption";
-            lblTotalCaption.Size = new System.Drawing.Size(69, 15);
+            lblTotalCaption.Size = new System.Drawing.Size(68, 18);
             lblTotalCaption.TabIndex = 4;
-            lblTotalCaption.Text = "Bill total";
+            lblTotalCaption.Text = "Bill Total:";
 
             // 
             // lblTotal
             // 
             lblTotal.AutoSize = true;
-            lblTotal.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            lblTotal.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblTotal.Location = new System.Drawing.Point(310, 103);
+            lblTotal.Font = new System.Drawing.Font("Yu Gothic Medium", 13F, System.Drawing.FontStyle.Bold);
+            lblTotal.Location = new System.Drawing.Point(310, 112);
             lblTotal.Name = "lblTotal";
-            lblTotal.Size = new System.Drawing.Size(52, 21);
+            lblTotal.Size = new System.Drawing.Size(61, 23);
             lblTotal.TabIndex = 5;
             lblTotal.Text = "₱0.00";
 
@@ -243,23 +237,23 @@
             // lblPaidCaption
             // 
             lblPaidCaption.AutoSize = true;
-            lblPaidCaption.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lblPaidCaption.Font = new System.Drawing.Font("Yu Gothic", 10F);
             lblPaidCaption.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblPaidCaption.Location = new System.Drawing.Point(590, 82);
+            lblPaidCaption.Location = new System.Drawing.Point(590, 88);
             lblPaidCaption.Name = "lblPaidCaption";
-            lblPaidCaption.Size = new System.Drawing.Size(83, 15);
+            lblPaidCaption.Size = new System.Drawing.Size(94, 18);
             lblPaidCaption.TabIndex = 6;
-            lblPaidCaption.Text = "Amount paid";
+            lblPaidCaption.Text = "Amount Paid:";
 
             // 
             // lblPaid
             // 
             lblPaid.AutoSize = true;
-            lblPaid.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            lblPaid.Font = new System.Drawing.Font("Yu Gothic Medium", 13F, System.Drawing.FontStyle.Bold);
             lblPaid.ForeColor = System.Drawing.Color.FromArgb(21, 128, 61);
-            lblPaid.Location = new System.Drawing.Point(590, 103);
+            lblPaid.Location = new System.Drawing.Point(590, 112);
             lblPaid.Name = "lblPaid";
-            lblPaid.Size = new System.Drawing.Size(52, 21);
+            lblPaid.Size = new System.Drawing.Size(61, 23);
             lblPaid.TabIndex = 7;
             lblPaid.Text = "₱0.00";
 
@@ -267,23 +261,22 @@
             // lblBalanceCaption
             // 
             lblBalanceCaption.AutoSize = true;
-            lblBalanceCaption.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lblBalanceCaption.Font = new System.Drawing.Font("Yu Gothic", 10F);
             lblBalanceCaption.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblBalanceCaption.Location = new System.Drawing.Point(870, 82);
+            lblBalanceCaption.Location = new System.Drawing.Point(870, 88);
             lblBalanceCaption.Name = "lblBalanceCaption";
-            lblBalanceCaption.Size = new System.Drawing.Size(53, 15);
+            lblBalanceCaption.Size = new System.Drawing.Size(63, 18);
             lblBalanceCaption.TabIndex = 8;
-            lblBalanceCaption.Text = "Balance";
+            lblBalanceCaption.Text = "Balance:";
 
             // 
             // lblBalance
             // 
             lblBalance.AutoSize = true;
-            lblBalance.Font = new System.Drawing.Font("Segoe UI", 12.5F, System.Drawing.FontStyle.Bold);
-            lblBalance.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblBalance.Location = new System.Drawing.Point(870, 102);
+            lblBalance.Font = new System.Drawing.Font("Yu Gothic Medium", 13F, System.Drawing.FontStyle.Bold);
+            lblBalance.Location = new System.Drawing.Point(870, 112);
             lblBalance.Name = "lblBalance";
-            lblBalance.Size = new System.Drawing.Size(55, 23);
+            lblBalance.Size = new System.Drawing.Size(61, 23);
             lblBalance.TabIndex = 9;
             lblBalance.Text = "₱0.00";
 
@@ -291,67 +284,64 @@
             // lblStatusCaption
             // 
             lblStatusCaption.AutoSize = true;
-            lblStatusCaption.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lblStatusCaption.Font = new System.Drawing.Font("Yu Gothic", 10F);
             lblStatusCaption.ForeColor = System.Drawing.Color.FromArgb(100, 116, 139);
-            lblStatusCaption.Location = new System.Drawing.Point(1150, 82);
+            lblStatusCaption.Location = new System.Drawing.Point(1150, 88);
             lblStatusCaption.Name = "lblStatusCaption";
-            lblStatusCaption.Size = new System.Drawing.Size(45, 15);
+            lblStatusCaption.Size = new System.Drawing.Size(53, 18);
             lblStatusCaption.TabIndex = 10;
-            lblStatusCaption.Text = "Status";
+            lblStatusCaption.Text = "Status:";
 
             // 
             // lblBillStatus
             // 
             lblBillStatus.AutoSize = true;
-            lblBillStatus.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            lblBillStatus.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblBillStatus.Location = new System.Drawing.Point(1150, 103);
+            lblBillStatus.Font = new System.Drawing.Font("Yu Gothic Medium", 13F, System.Drawing.FontStyle.Bold);
+            lblBillStatus.Location = new System.Drawing.Point(1150, 112);
             lblBillStatus.Name = "lblBillStatus";
-            lblBillStatus.Size = new System.Drawing.Size(19, 21);
+            lblBillStatus.Size = new System.Drawing.Size(22, 23);
             lblBillStatus.TabIndex = 11;
             lblBillStatus.Text = "-";
 
             // 
-            // pnlHistoryCard
+            // grpHistory
             // 
-            pnlHistoryCard.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
-            pnlHistoryCard.BackColor = System.Drawing.Color.White;
-            pnlHistoryCard.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            pnlHistoryCard.Controls.Add(dgvPayments);
-            pnlHistoryCard.Controls.Add(btnVoidPayment);
-            pnlHistoryCard.Controls.Add(lblHistoryTitle);
-            pnlHistoryCard.Location = new System.Drawing.Point(35, 258);
-            pnlHistoryCard.Name = "pnlHistoryCard";
-            pnlHistoryCard.Size = new System.Drawing.Size(960, 678);
-            pnlHistoryCard.TabIndex = 3;
+            grpHistory.BackColor = System.Drawing.Color.WhiteSmoke;
+            grpHistory.Controls.Add(btnPrintReceipt);
+            grpHistory.Controls.Add(btnVoidPayment);
+            grpHistory.Controls.Add(dgvPayments);
+            grpHistory.Font = new System.Drawing.Font("Yu Gothic Medium", 12F, System.Drawing.FontStyle.Bold);
+            grpHistory.Location = new System.Drawing.Point(35, 270);
+            grpHistory.Name = "grpHistory";
+            grpHistory.Size = new System.Drawing.Size(920, 655);
+            grpHistory.TabIndex = 2;
+            grpHistory.TabStop = false;
+            grpHistory.Text = "Payment History";
 
             // 
-            // lblHistoryTitle
+            // btnPrintReceipt
             // 
-            lblHistoryTitle.AutoSize = true;
-            lblHistoryTitle.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            lblHistoryTitle.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblHistoryTitle.Location = new System.Drawing.Point(20, 18);
-            lblHistoryTitle.Name = "lblHistoryTitle";
-            lblHistoryTitle.Size = new System.Drawing.Size(134, 21);
-            lblHistoryTitle.TabIndex = 0;
-            lblHistoryTitle.Text = "Payment history";
+            btnPrintReceipt.BackColor = System.Drawing.Color.White;
+            btnPrintReceipt.Enabled = false;
+            btnPrintReceipt.Font = new System.Drawing.Font("Yu Gothic Medium", 11F, System.Drawing.FontStyle.Bold);
+            btnPrintReceipt.Location = new System.Drawing.Point(525, 32);
+            btnPrintReceipt.Name = "btnPrintReceipt";
+            btnPrintReceipt.Size = new System.Drawing.Size(180, 40);
+            btnPrintReceipt.TabIndex = 0;
+            btnPrintReceipt.Text = "Print Receipt";
+            btnPrintReceipt.UseVisualStyleBackColor = false;
+            btnPrintReceipt.Click += PrintReceipt_Click;
 
             // 
             // btnVoidPayment
             // 
-            btnVoidPayment.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btnVoidPayment.BackColor = System.Drawing.Color.FromArgb(185, 28, 28);
-            btnVoidPayment.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnVoidPayment.FlatAppearance.BorderSize = 0;
-            btnVoidPayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            btnVoidPayment.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            btnVoidPayment.ForeColor = System.Drawing.Color.White;
-            btnVoidPayment.Location = new System.Drawing.Point(778, 14);
+            btnVoidPayment.BackColor = System.Drawing.Color.MistyRose;
+            btnVoidPayment.Font = new System.Drawing.Font("Yu Gothic Medium", 11F, System.Drawing.FontStyle.Bold);
+            btnVoidPayment.Location = new System.Drawing.Point(715, 32);
             btnVoidPayment.Name = "btnVoidPayment";
-            btnVoidPayment.Size = new System.Drawing.Size(160, 32);
+            btnVoidPayment.Size = new System.Drawing.Size(180, 40);
             btnVoidPayment.TabIndex = 1;
-            btnVoidPayment.Text = "Void selected";
+            btnVoidPayment.Text = "Void Selected";
             btnVoidPayment.UseVisualStyleBackColor = false;
             btnVoidPayment.Click += VoidPayment_Click;
 
@@ -361,23 +351,10 @@
             dgvPayments.AllowUserToAddRows = false;
             dgvPayments.AllowUserToDeleteRows = false;
             dgvPayments.AllowUserToResizeRows = false;
-            dgvPayments.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right;
             dgvPayments.AutoGenerateColumns = false;
             dgvPayments.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            dgvPayments.BackgroundColor = System.Drawing.Color.FromArgb(248, 250, 252);
-            dgvPayments.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            dgvPayments.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.SingleHorizontal;
-            dgvPayments.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.Single;
-            headerCellStyle.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            headerCellStyle.BackColor = System.Drawing.Color.FromArgb(241, 245, 249);
-            headerCellStyle.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            headerCellStyle.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105);
-            headerCellStyle.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            headerCellStyle.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            headerCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            dgvPayments.ColumnHeadersDefaultCellStyle = headerCellStyle;
-            dgvPayments.ColumnHeadersHeight = 40;
-            dgvPayments.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            dgvPayments.BackgroundColor = System.Drawing.Color.White;
+            dgvPayments.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvPayments.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[]
             {
                 colPaymentId,
@@ -389,25 +366,16 @@
                 colReceivedBy,
                 colStatus
             });
-            defaultCellStyle.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            defaultCellStyle.BackColor = System.Drawing.Color.White;
-            defaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            defaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            defaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(219, 234, 254);
-            defaultCellStyle.SelectionForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            defaultCellStyle.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            dgvPayments.DefaultCellStyle = defaultCellStyle;
-            dgvPayments.EnableHeadersVisualStyles = false;
-            dgvPayments.GridColor = System.Drawing.Color.FromArgb(226, 232, 240);
-            dgvPayments.Location = new System.Drawing.Point(20, 56);
+            dgvPayments.Location = new System.Drawing.Point(25, 85);
             dgvPayments.MultiSelect = false;
             dgvPayments.Name = "dgvPayments";
             dgvPayments.ReadOnly = true;
             dgvPayments.RowHeadersVisible = false;
             dgvPayments.RowTemplate.Height = 36;
             dgvPayments.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            dgvPayments.Size = new System.Drawing.Size(918, 600);
+            dgvPayments.Size = new System.Drawing.Size(870, 545);
             dgvPayments.TabIndex = 2;
+            dgvPayments.SelectionChanged += Payments_SelectionChanged;
 
             // 
             // colPaymentId
@@ -473,7 +441,7 @@
             // 
             colReceivedBy.DataPropertyName = "ReceivedBy";
             colReceivedBy.FillWeight = 16F;
-            colReceivedBy.HeaderText = "Received by";
+            colReceivedBy.HeaderText = "Received By";
             colReceivedBy.Name = "colReceivedBy";
             colReceivedBy.ReadOnly = true;
 
@@ -487,132 +455,113 @@
             colStatus.ReadOnly = true;
 
             // 
-            // pnlPostCard
+            // grpPostPayment
             // 
-            pnlPostCard.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right;
-            pnlPostCard.BackColor = System.Drawing.Color.White;
-            pnlPostCard.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            pnlPostCard.Controls.Add(lblMessage);
-            pnlPostCard.Controls.Add(btnPostPayment);
-            pnlPostCard.Controls.Add(txtReferenceNo);
-            pnlPostCard.Controls.Add(lblReferenceCaption);
-            pnlPostCard.Controls.Add(cmbMethod);
-            pnlPostCard.Controls.Add(lblMethodCaption);
-            pnlPostCard.Controls.Add(txtAmount);
-            pnlPostCard.Controls.Add(lblAmountCaption);
-            pnlPostCard.Controls.Add(lblPostTitle);
-            pnlPostCard.Location = new System.Drawing.Point(1013, 258);
-            pnlPostCard.Name = "pnlPostCard";
-            pnlPostCard.Size = new System.Drawing.Size(452, 678);
-            pnlPostCard.TabIndex = 4;
-
-            // 
-            // lblPostTitle
-            // 
-            lblPostTitle.AutoSize = true;
-            lblPostTitle.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
-            lblPostTitle.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59);
-            lblPostTitle.Location = new System.Drawing.Point(22, 18);
-            lblPostTitle.Name = "lblPostTitle";
-            lblPostTitle.Size = new System.Drawing.Size(113, 21);
-            lblPostTitle.TabIndex = 0;
-            lblPostTitle.Text = "Post payment";
+            grpPostPayment.BackColor = System.Drawing.Color.WhiteSmoke;
+            grpPostPayment.Controls.Add(lblAmountCaption);
+            grpPostPayment.Controls.Add(txtAmount);
+            grpPostPayment.Controls.Add(lblMethodCaption);
+            grpPostPayment.Controls.Add(cmbMethod);
+            grpPostPayment.Controls.Add(lblReferenceCaption);
+            grpPostPayment.Controls.Add(txtReferenceNo);
+            grpPostPayment.Controls.Add(btnPostPayment);
+            grpPostPayment.Controls.Add(lblMessage);
+            grpPostPayment.Font = new System.Drawing.Font("Yu Gothic Medium", 12F, System.Drawing.FontStyle.Bold);
+            grpPostPayment.Location = new System.Drawing.Point(975, 270);
+            grpPostPayment.Name = "grpPostPayment";
+            grpPostPayment.Size = new System.Drawing.Size(475, 655);
+            grpPostPayment.TabIndex = 3;
+            grpPostPayment.TabStop = false;
+            grpPostPayment.Text = "Post Payment";
 
             // 
             // lblAmountCaption
             // 
             lblAmountCaption.AutoSize = true;
-            lblAmountCaption.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            lblAmountCaption.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105);
-            lblAmountCaption.Location = new System.Drawing.Point(22, 60);
+            lblAmountCaption.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            lblAmountCaption.Location = new System.Drawing.Point(25, 50);
             lblAmountCaption.Name = "lblAmountCaption";
-            lblAmountCaption.Size = new System.Drawing.Size(78, 17);
-            lblAmountCaption.TabIndex = 1;
-            lblAmountCaption.Text = "Amount (₱)";
+            lblAmountCaption.Size = new System.Drawing.Size(91, 20);
+            lblAmountCaption.TabIndex = 0;
+            lblAmountCaption.Text = "Amount (₱):";
 
             // 
             // txtAmount
             // 
-            txtAmount.Font = new System.Drawing.Font("Segoe UI", 11F);
-            txtAmount.Location = new System.Drawing.Point(22, 82);
+            txtAmount.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            txtAmount.Location = new System.Drawing.Point(25, 78);
             txtAmount.Name = "txtAmount";
             txtAmount.PlaceholderText = "0.00";
-            txtAmount.Size = new System.Drawing.Size(386, 27);
-            txtAmount.TabIndex = 2;
+            txtAmount.Size = new System.Drawing.Size(425, 31);
+            txtAmount.TabIndex = 1;
 
             // 
             // lblMethodCaption
             // 
             lblMethodCaption.AutoSize = true;
-            lblMethodCaption.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            lblMethodCaption.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105);
-            lblMethodCaption.Location = new System.Drawing.Point(22, 128);
+            lblMethodCaption.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            lblMethodCaption.Location = new System.Drawing.Point(25, 132);
             lblMethodCaption.Name = "lblMethodCaption";
-            lblMethodCaption.Size = new System.Drawing.Size(114, 17);
-            lblMethodCaption.TabIndex = 3;
-            lblMethodCaption.Text = "Payment method";
+            lblMethodCaption.Size = new System.Drawing.Size(131, 20);
+            lblMethodCaption.TabIndex = 2;
+            lblMethodCaption.Text = "Payment Method:";
 
             // 
             // cmbMethod
             // 
             cmbMethod.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            cmbMethod.Font = new System.Drawing.Font("Segoe UI", 10.5F);
+            cmbMethod.Font = new System.Drawing.Font("Yu Gothic", 11F);
             cmbMethod.FormattingEnabled = true;
-            cmbMethod.Location = new System.Drawing.Point(22, 150);
+            cmbMethod.Location = new System.Drawing.Point(25, 160);
             cmbMethod.Name = "cmbMethod";
-            cmbMethod.Size = new System.Drawing.Size(386, 27);
-            cmbMethod.TabIndex = 4;
+            cmbMethod.Size = new System.Drawing.Size(425, 27);
+            cmbMethod.TabIndex = 3;
             cmbMethod.SelectedIndexChanged += Method_SelectedIndexChanged;
 
             // 
             // lblReferenceCaption
             // 
             lblReferenceCaption.AutoSize = true;
-            lblReferenceCaption.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
-            lblReferenceCaption.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105);
-            lblReferenceCaption.Location = new System.Drawing.Point(22, 196);
+            lblReferenceCaption.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            lblReferenceCaption.Location = new System.Drawing.Point(25, 212);
             lblReferenceCaption.Name = "lblReferenceCaption";
-            lblReferenceCaption.Size = new System.Drawing.Size(121, 17);
-            lblReferenceCaption.TabIndex = 5;
-            lblReferenceCaption.Text = "Reference number";
+            lblReferenceCaption.Size = new System.Drawing.Size(141, 20);
+            lblReferenceCaption.TabIndex = 4;
+            lblReferenceCaption.Text = "Reference Number:";
 
             // 
             // txtReferenceNo
             // 
-            txtReferenceNo.Font = new System.Drawing.Font("Segoe UI", 10.5F);
-            txtReferenceNo.Location = new System.Drawing.Point(22, 218);
+            txtReferenceNo.Font = new System.Drawing.Font("Yu Gothic", 11F);
+            txtReferenceNo.Location = new System.Drawing.Point(25, 240);
             txtReferenceNo.MaxLength = 100;
             txtReferenceNo.Name = "txtReferenceNo";
             txtReferenceNo.PlaceholderText = "Required for non-cash payments";
-            txtReferenceNo.Size = new System.Drawing.Size(386, 26);
-            txtReferenceNo.TabIndex = 6;
+            txtReferenceNo.Size = new System.Drawing.Size(425, 31);
+            txtReferenceNo.TabIndex = 5;
 
             // 
             // btnPostPayment
             // 
-            btnPostPayment.BackColor = System.Drawing.Color.FromArgb(37, 99, 235);
-            btnPostPayment.Cursor = System.Windows.Forms.Cursors.Hand;
-            btnPostPayment.FlatAppearance.BorderSize = 0;
-            btnPostPayment.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            btnPostPayment.Font = new System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold);
-            btnPostPayment.ForeColor = System.Drawing.Color.White;
-            btnPostPayment.Location = new System.Drawing.Point(22, 268);
+            btnPostPayment.BackColor = System.Drawing.Color.LightGreen;
+            btnPostPayment.Font = new System.Drawing.Font("Yu Gothic Medium", 11F, System.Drawing.FontStyle.Bold);
+            btnPostPayment.Location = new System.Drawing.Point(25, 300);
             btnPostPayment.Name = "btnPostPayment";
-            btnPostPayment.Size = new System.Drawing.Size(406, 42);
-            btnPostPayment.TabIndex = 7;
-            btnPostPayment.Text = "Post payment";
+            btnPostPayment.Size = new System.Drawing.Size(425, 50);
+            btnPostPayment.TabIndex = 6;
+            btnPostPayment.Text = "Post Payment";
             btnPostPayment.UseVisualStyleBackColor = false;
             btnPostPayment.Click += PostPayment_Click;
 
             // 
             // lblMessage
             // 
-            lblMessage.Font = new System.Drawing.Font("Segoe UI", 10F);
+            lblMessage.Font = new System.Drawing.Font("Yu Gothic", 10.5F);
             lblMessage.ForeColor = System.Drawing.Color.FromArgb(185, 28, 28);
-            lblMessage.Location = new System.Drawing.Point(22, 330);
+            lblMessage.Location = new System.Drawing.Point(25, 370);
             lblMessage.Name = "lblMessage";
-            lblMessage.Size = new System.Drawing.Size(406, 320);
-            lblMessage.TabIndex = 8;
+            lblMessage.Size = new System.Drawing.Size(425, 260);
+            lblMessage.TabIndex = 7;
 
             // 
             // errProvider
@@ -625,27 +574,21 @@
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            BackColor = System.Drawing.Color.FromArgb(245, 247, 251);
-            Controls.Add(pnlPostCard);
-            Controls.Add(pnlHistoryCard);
-            Controls.Add(pnlBillCard);
-            Controls.Add(lblSubtitle);
-            Controls.Add(lblTitle);
-            Font = new System.Drawing.Font("Segoe UI", 9.5F);
+            Controls.Add(pnlMainHandler);
             Name = "PaymentUserControl";
-            Size = new System.Drawing.Size(1500, 969);
+            Size = new System.Drawing.Size(1500, 979);
             Load += PaymentUserControl_Load;
 
-            pnlBillCard.ResumeLayout(false);
-            pnlBillCard.PerformLayout();
-            pnlHistoryCard.ResumeLayout(false);
-            pnlHistoryCard.PerformLayout();
+            pnlMainHandler.ResumeLayout(false);
+            pnlMainHandler.PerformLayout();
+            grpBillSelection.ResumeLayout(false);
+            grpBillSelection.PerformLayout();
+            grpHistory.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvPayments).EndInit();
-            pnlPostCard.ResumeLayout(false);
-            pnlPostCard.PerformLayout();
+            grpPostPayment.ResumeLayout(false);
+            grpPostPayment.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)errProvider).EndInit();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
