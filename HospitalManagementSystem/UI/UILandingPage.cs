@@ -88,7 +88,7 @@ namespace UI
 
             if (e.Action == ActiveAdmissionAction.ViewBill)
             {
-                UIHelper.ShowView(pnlUCHandler, new BillingUserControl(e.AdmissionId));
+                ShowBilling(e.AdmissionId);
                 return;
             }
 
