@@ -297,7 +297,6 @@
             btnClear.TabIndex = 16;
             btnClear.Text = "Clear Form";
             btnClear.UseVisualStyleBackColor = true;
-            btnClear.Click += btnClear_Click;
             // 
             // lblAdmissionHistory
             // 
@@ -325,8 +324,6 @@
             dgvAdmissionHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvAdmissionHistory.Size = new Size(425, 232);
             dgvAdmissionHistory.TabIndex = 18;
-            dgvAdmissionHistory.CellDoubleClick += dgvAdmissionHistory_CellDoubleClick;
-            dgvAdmissionHistory.SelectionChanged += dgvAdmissionHistory_SelectionChanged;
             // 
             // colHistAdmissionID
             // 
@@ -388,7 +385,6 @@
             chkShowDeleted.TabIndex = 2;
             chkShowDeleted.Text = "Show deactivated patients";
             chkShowDeleted.UseVisualStyleBackColor = true;
-            chkShowDeleted.CheckedChanged += chkShowDeleted_CheckedChanged;
             // 
             // txtSearch
             // 
@@ -423,7 +419,6 @@
             dgvPatients.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvPatients.Size = new Size(960, 645);
             dgvPatients.TabIndex = 2;
-            dgvPatients.SelectionChanged += dgvPatients_SelectionChanged;
             // 
             // colPatientID
             // 
@@ -489,7 +484,6 @@
             btnAdd.TabIndex = 3;
             btnAdd.Text = "+ Add Patient";
             btnAdd.UseVisualStyleBackColor = false;
-            btnAdd.Click += btnAdd_Click;
             // 
             // btnUpdate
             // 
@@ -501,7 +495,6 @@
             btnUpdate.TabIndex = 4;
             btnUpdate.Text = "Update Record";
             btnUpdate.UseVisualStyleBackColor = false;
-            btnUpdate.Click += btnUpdate_Click;
             // 
             // btnDelete
             // 
@@ -513,7 +506,6 @@
             btnDelete.TabIndex = 5;
             btnDelete.Text = "Deactivate Patient";
             btnDelete.UseVisualStyleBackColor = false;
-            btnDelete.Click += btnDelete_Click;
             // 
             // btnRestore
             // 
@@ -526,7 +518,6 @@
             btnRestore.TabIndex = 6;
             btnRestore.Text = "Restore Patient";
             btnRestore.UseVisualStyleBackColor = false;
-            btnRestore.Click += btnRestore_Click;
             // 
             // btnViewDischargeRecord
             // 

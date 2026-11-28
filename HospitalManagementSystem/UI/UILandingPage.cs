@@ -1,4 +1,4 @@
-﻿using BusinessLogic;
+using BusinessLogic;
 
 namespace UI
 {
@@ -17,8 +17,7 @@ namespace UI
             ReturnToLogin();
         }
 
-        private void btnHome_Click(object sender, EventArgs e) =>
-            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+        private void btnHome_Click(object sender, EventArgs e) => ShowHome();
 
         private void btnAdmission_Click(object sender, EventArgs e)
         {
@@ -43,8 +42,20 @@ namespace UI
 
             lblSignedInAs.Text = SessionManager.CurrentEmail ?? "Unknown";
             btnReports.Visible = Permissions.IsAllowed(AppAction.ViewReports); // Admin only
-            UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
+            ShowHome();
         }
+
+        // Always show the Home dashboard in the main content panel.
+        private void ShowHome()
+        {
+            var view = new HomeUserControl();
+            view.PatientsRequested += (_, _) => ShowPatients();
+            UIHelper.ShowView(pnlUCHandler, view);
+        }
+
+        // Patient Maintenance is the screen that contains the patient records table.
+        private void ShowPatients() =>
+            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
 
         private void ReturnToLogin()
         {
@@ -53,8 +64,7 @@ namespace UI
             Close();
         }
 
-        private void btnPatientMaintenance_Click(object sender, EventArgs e) =>
-            UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
+        private void btnPatientMaintenance_Click(object sender, EventArgs e) => ShowPatients();
 
         private void btnSearch_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<UnifiedSearchUserControl>(pnlUCHandler);
