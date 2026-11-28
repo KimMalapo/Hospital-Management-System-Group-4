@@ -56,6 +56,7 @@
             colHistAdmitDate = new DataGridViewTextBoxColumn();
             colHistStatus = new DataGridViewTextBoxColumn();
             grpList = new GroupBox();
+            chkShowDeleted = new CheckBox();
             txtSearch = new TextBox();
             lblSearch = new Label();
             dgvPatients = new DataGridView();
@@ -73,7 +74,6 @@
             btnDelete = new Button();
             btnRestore = new Button();
             btnViewDischargeRecord = new Button();
-            chkShowDeleted = new CheckBox();
             pnlMainHandler.SuspendLayout();
             grpPatientDetails.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numAge).BeginInit();
@@ -85,6 +85,7 @@
             // pnlMainHandler
             // 
             pnlMainHandler.BackColor = SystemColors.ActiveBorder;
+            pnlMainHandler.Controls.Add(btnViewDischargeRecord);
             pnlMainHandler.Controls.Add(lblTitle);
             pnlMainHandler.Controls.Add(grpPatientDetails);
             pnlMainHandler.Controls.Add(grpList);
@@ -306,7 +307,7 @@
             lblAdmissionHistory.Font = new Font("Yu Gothic", 11F, FontStyle.Bold);
             lblAdmissionHistory.Location = new Point(25, 474);
             lblAdmissionHistory.Name = "lblAdmissionHistory";
-            lblAdmissionHistory.Size = new Size(216, 20);
+            lblAdmissionHistory.Size = new Size(203, 19);
             lblAdmissionHistory.TabIndex = 17;
             lblAdmissionHistory.Text = "Patient Admission History:";
             // 
@@ -326,8 +327,8 @@
             dgvAdmissionHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvAdmissionHistory.Size = new Size(425, 232);
             dgvAdmissionHistory.TabIndex = 18;
-            dgvAdmissionHistory.SelectionChanged += dgvAdmissionHistory_SelectionChanged;
             dgvAdmissionHistory.CellDoubleClick += dgvAdmissionHistory_CellDoubleClick;
+            dgvAdmissionHistory.SelectionChanged += dgvAdmissionHistory_SelectionChanged;
             // 
             // colHistAdmissionID
             // 
@@ -378,6 +379,18 @@
             grpList.TabIndex = 2;
             grpList.TabStop = false;
             grpList.Text = "Patient Records";
+            // 
+            // chkShowDeleted
+            // 
+            chkShowDeleted.AutoSize = true;
+            chkShowDeleted.Font = new Font("Yu Gothic", 11F);
+            chkShowDeleted.Location = new Point(20, 38);
+            chkShowDeleted.Name = "chkShowDeleted";
+            chkShowDeleted.Size = new Size(209, 24);
+            chkShowDeleted.TabIndex = 2;
+            chkShowDeleted.Text = "Show deactivated patients";
+            chkShowDeleted.UseVisualStyleBackColor = true;
+            chkShowDeleted.CheckedChanged += chkShowDeleted_CheckedChanged;
             // 
             // txtSearch
             // 
@@ -519,28 +532,15 @@
             // 
             // btnViewDischargeRecord
             // 
-            btnViewDischargeRecord.BackColor = Color.LightSteelBlue;
+            btnViewDischargeRecord.BackColor = Color.LavenderBlush;
             btnViewDischargeRecord.Enabled = false;
             btnViewDischargeRecord.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
-            btnViewDischargeRecord.Location = new Point(1095, 855);
+            btnViewDischargeRecord.Location = new Point(1098, 855);
             btnViewDischargeRecord.Name = "btnViewDischargeRecord";
-            btnViewDischargeRecord.Size = new Size(275, 60);
+            btnViewDischargeRecord.Size = new Size(250, 60);
             btnViewDischargeRecord.TabIndex = 7;
-            btnViewDischargeRecord.Text = "View Final Record";
+            btnViewDischargeRecord.Text = "View Discharge Record";
             btnViewDischargeRecord.UseVisualStyleBackColor = false;
-            btnViewDischargeRecord.Click += btnViewDischargeRecord_Click;
-            // 
-            // chkShowDeleted
-            // 
-            chkShowDeleted.AutoSize = true;
-            chkShowDeleted.Font = new Font("Yu Gothic", 11F);
-            chkShowDeleted.Location = new Point(20, 38);
-            chkShowDeleted.Name = "chkShowDeleted";
-            chkShowDeleted.Size = new Size(200, 24);
-            chkShowDeleted.TabIndex = 2;
-            chkShowDeleted.Text = "Show deactivated patients";
-            chkShowDeleted.UseVisualStyleBackColor = true;
-            chkShowDeleted.CheckedChanged += chkShowDeleted_CheckedChanged;
             // 
             // PatientMaintenanceUserControl
             // 
@@ -610,5 +610,6 @@
         private Button btnRestore;
         private Button btnViewDischargeRecord;
         private CheckBox chkShowDeleted;
+        private Button btnViewDischargeRecord;
     }
 }

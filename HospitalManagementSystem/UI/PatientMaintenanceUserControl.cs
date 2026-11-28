@@ -21,6 +21,8 @@ namespace UI
             UITheme.Apply(this);
             txtSearch.TextChanged += TxtSearch_TextChanged;
             txtPatientID.ReadOnly = true;
+
+            // Changed from xbtnViewDischargeRecord
             btnViewDischargeRecord.Enabled = false;
         }
 
