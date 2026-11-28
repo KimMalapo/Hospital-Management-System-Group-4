@@ -59,6 +59,7 @@
             lblDiscountReason = new Label();
             _discountReason = new TextBox();
             _applyDiscount = new Button();
+            _voidBill = new Button();
             _message = new Label();
             ((System.ComponentModel.ISupportInitialize)_errors).BeginInit();
             pnlMainHandler.SuspendLayout();
@@ -216,6 +217,7 @@
             grpSummary.Controls.Add(lblDiscountReason);
             grpSummary.Controls.Add(_discountReason);
             grpSummary.Controls.Add(_applyDiscount);
+            grpSummary.Controls.Add(_voidBill);
             grpSummary.Controls.Add(_message);
             grpSummary.Font = new Font("Yu Gothic Medium", 12F, FontStyle.Bold);
             grpSummary.Location = new Point(975, 210);
@@ -405,13 +407,25 @@
             _applyDiscount.Text = "Apply Discount";
             _applyDiscount.UseVisualStyleBackColor = false;
             // 
+            // _voidBill
+            // 
+            _voidBill.BackColor = Color.MistyRose;
+            _voidBill.Enabled = false;
+            _voidBill.Font = new Font("Yu Gothic Medium", 11F, FontStyle.Bold);
+            _voidBill.Location = new Point(25, 610);
+            _voidBill.Name = "_voidBill";
+            _voidBill.Size = new Size(425, 48);
+            _voidBill.TabIndex = 19;
+            _voidBill.Text = "Void Bill";
+            _voidBill.UseVisualStyleBackColor = false;
+            // 
             // _message
             // 
             _message.Font = new Font("Yu Gothic", 10F);
             _message.ForeColor = Color.FromArgb(185, 28, 28);
-            _message.Location = new Point(25, 615);
+            _message.Location = new Point(25, 668);
             _message.Name = "_message";
-            _message.Size = new Size(425, 75);
+            _message.Size = new Size(425, 40);
             _message.TabIndex = 18;
             // 
             // BillingUserControl
@@ -465,6 +479,7 @@
         private Label lblDiscountReason;
         private TextBox _discountReason;
         private Button _applyDiscount;
+        private Button _voidBill;
         private Label _message;
     }
 }
