@@ -1,5 +1,6 @@
 namespace Model;
 
+/// <summary>One hospital stay of a patient.</summary>
 public class Admission
 {
     public int AdmissionID { get; set; }

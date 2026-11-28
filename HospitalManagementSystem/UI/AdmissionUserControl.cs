@@ -17,6 +17,8 @@ public sealed partial class AdmissionUserControl : UserControl
     private int? _selectedPatientId;
     private bool _loadingPatients;
 
+    private const string NoPatientSelectedText = "No patient selected";
+
     public event EventHandler<AdmissionCreatedEventArgs>? AdmissionCreated;
 
     public AdmissionUserControl()
@@ -137,15 +139,28 @@ public sealed partial class AdmissionUserControl : UserControl
         {
             _loadingPatients = true;
             _selectedPatientId = null;
-            _selectedPatient.Text = "No patient selected";
+            _selectedPatient.Text = NoPatientSelectedText;
             var source = _patientService.GetPatients(searchTerm);
+
+            // Patients who are already admitted can't be admitted again, so leave them out of the list.
+            var admittedIds = _admissionService == null
+                ? new HashSet<int>()
+                : _admissionService.GetActive().AsEnumerable().Select(r => Convert.ToInt32(r["PatientID"])).ToHashSet();
+
             var patients = new DataTable();
             patients.Columns.Add("PatientID", typeof(int));
             patients.Columns.Add("PatientName", typeof(string));
             patients.Columns.Add("Age", typeof(string));
 
+            var hiddenCount = 0;
             foreach (DataRow row in source.Rows)
             {
+                if (admittedIds.Contains(Convert.ToInt32(row["PatientID"])))
+                {
+                    hiddenCount++;
+                    continue;
+                }
+
                 var dateOfBirth = row["DateOfBirth"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["DateOfBirth"]);
                 var age = dateOfBirth.HasValue ? CalculateAge(dateOfBirth.Value).ToString() : "N/A";
                 patients.Rows.Add(Convert.ToInt32(row["PatientID"]),
@@ -154,7 +169,9 @@ public sealed partial class AdmissionUserControl : UserControl
 
             _patientsGrid.DataSource = patients;
             _patientsGrid.ClearSelection();
-            _status.Text = patients.Rows.Count == 0 ? "No registered patients match this search." : string.Empty;
+            _status.Text = patients.Rows.Count > 0 ? string.Empty
+                : hiddenCount > 0 ? "The matching patients are already admitted."
+                : "No registered patients match this search.";
         }
         catch (Exception ex)
         {
@@ -202,14 +219,12 @@ public sealed partial class AdmissionUserControl : UserControl
         }
         catch (ValidationException ex)
         {
-            _status.ForeColor = Color.Firebrick;
             _status.Text = ex.Message;
             SetValidationError(ex.Field, ex.Message);
         }
         catch (Exception ex)
         {
             Logger.Error("AdmissionUserControl.Admit failed", ex);
-            _status.ForeColor = Color.Firebrick;
             _status.Text = "The admission could not be saved. Check the details and try again.";
         }
     }
@@ -223,46 +238,21 @@ public sealed partial class AdmissionUserControl : UserControl
     {
         _errors.Clear();
         var valid = true;
-        if (_selectedPatientId is null)
+
+        void Reject(Control control, string message)
         {
-            _errors.SetError(_patientsGrid, "Select a registered patient.");
-            valid = false;
-        }
-        if (_rooms.SelectedValue is not string)
-        {
-            _errors.SetError(_rooms, "Select an available room.");
-            valid = false;
-        }
-        if (_departments.SelectedValue is not string)
-        {
-            _errors.SetError(_departments, "Select a department.");
-            valid = false;
-        }
-        if (_diagnoses.SelectedValue is not string)
-        {
-            _errors.SetError(_diagnoses, "Select a diagnosis.");
-            valid = false;
-        }
-        if (string.IsNullOrWhiteSpace(_physician.Text))
-        {
-            _errors.SetError(_physician, "Enter the attending physician.");
-            valid = false;
-        }
-        if (_admitDate.Value > DateTime.Now.AddMinutes(5))
-        {
-            _errors.SetError(_admitDate, "The admit date cannot be in the future.");
+            _errors.SetError(control, message);
             valid = false;
         }
 
-        if (!valid)
-        {
-            _status.ForeColor = Color.Firebrick;
-            _status.Text = "Complete the required fields marked with an error.";
-        }
-        else
-        {
-            _status.Text = string.Empty;
-        }
+        if (_selectedPatientId is null) Reject(_patientsGrid, "Select a registered patient.");
+        if (_rooms.SelectedValue is not string) Reject(_rooms, "Select an available room.");
+        if (_departments.SelectedValue is not string) Reject(_departments, "Select a department.");
+        if (_diagnoses.SelectedValue is not string) Reject(_diagnoses, "Select a diagnosis.");
+        if (string.IsNullOrWhiteSpace(_physician.Text)) Reject(_physician, "Enter the attending physician.");
+        if (_admitDate.Value > DateTime.Now.AddMinutes(5)) Reject(_admitDate, "The admit date cannot be in the future.");
+
+        _status.Text = valid ? string.Empty : "Complete the required fields marked with an error.";
         return valid;
     }
 
@@ -289,7 +279,7 @@ public sealed partial class AdmissionUserControl : UserControl
         _patientSearch.Clear();
         _patientsGrid.ClearSelection();
         _selectedPatientId = null;
-        _selectedPatient.Text = "No patient selected";
+        _selectedPatient.Text = NoPatientSelectedText;
         _rooms.SelectedIndex = -1;
         _departments.SelectedIndex = -1;
         _diagnoses.SelectedIndex = -1;
@@ -319,6 +309,7 @@ public sealed partial class AdmissionUserControl : UserControl
     }
 }
 
+/// <summary>Says a patient was just admitted.</summary>
 public sealed class AdmissionCreatedEventArgs(int admissionId, string admissionNo) : EventArgs
 {
     public int AdmissionId { get; } = admissionId;

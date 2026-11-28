@@ -1,10 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
-using BusinessLogic;
+﻿using BusinessLogic;
 
 namespace UI
 {
+    /// <summary>Main window after login. The left menu swaps the screen on the right.</summary>
     public partial class UILandingPage : Form
     {
         public UILandingPage()
@@ -19,10 +17,8 @@ namespace UI
             ReturnToLogin();
         }
 
-        private void btnHome_Click(object sender, EventArgs e)
-        {
+        private void btnHome_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
-        }
 
         private void btnAdmission_Click(object sender, EventArgs e)
         {
@@ -31,53 +27,22 @@ namespace UI
             UIHelper.ShowView(pnlUCHandler, view);
         }
 
-        private void btnActiveAdmissions_Click(object sender, EventArgs e)
-        {
-            ShowActiveAdmissions();
-        }
+        private void btnActiveAdmissions_Click(object sender, EventArgs e) => ShowActiveAdmissions();
 
-        private void btnBilling_Click(object sender, EventArgs e)
-        {
-            ShowBilling(null);
-        }
-
-        private void ShowBilling(int? admissionId)
-        {
-            var view = new BillingUserControl(admissionId);
-            view.GoToPaymentRequested += BillingUserControl_GoToPaymentRequested;
-            UIHelper.ShowView(pnlUCHandler, view);
-        }
-
-        private void BillingUserControl_GoToPaymentRequested(object? sender, BillNavigationEventArgs e)
-        {
-            UIHelper.ShowView(pnlUCHandler, new PaymentUserControl(e.BillId));
-        }
-
-        private void btnServiceCatalog_Click(object sender, EventArgs e)
-        {
-            if (!Permissions.IsAllowed(AppAction.ManageServices))
-            {
-                MessageBox.Show(this, "Only an Admin can access the Service Catalog.", "Access denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            UIHelper.ShowView<ServiceCatalogUserControl>(pnlUCHandler);
-        }
+        private void btnBilling_Click(object sender, EventArgs e) =>
+            UIHelper.ShowView(pnlUCHandler, new BillingUserControl());
 
         private void UILandingPage_Load(object sender, EventArgs e)
         {
             if (!SessionManager.IsAuthenticated)
             {
-                MessageBox.Show("Your session is no longer valid. Please sign in again.", "Sign-in required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo("Your session is no longer valid. Please sign in again.", "Sign-in required");
                 ReturnToLogin();
                 return;
             }
 
             lblSignedInAs.Text = SessionManager.CurrentEmail ?? "Unknown";
-
-            // Hide Service Catalog from Staff users (AC #7)
-            btnServiceCatalog.Visible = Permissions.IsAllowed(AppAction.ManageServices);
-
+            btnReports.Visible = Permissions.IsAllowed(AppAction.ViewReports); // Admin only
             UIHelper.ShowView<HomeUserControl>(pnlUCHandler);
         }
 
@@ -88,30 +53,23 @@ namespace UI
             Close();
         }
 
-        private void btnPatientMaintenance_Click(object sender, EventArgs e)
-        {
+        private void btnPatientMaintenance_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<PatientMaintenanceUserControl>(pnlUCHandler);
-        }
 
-        private void btnSearch_Click(object sender, EventArgs e)
-        {
+        private void btnSearch_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<UnifiedSearchUserControl>(pnlUCHandler);
-        }
 
-        private void btnMasterData_Click(object sender, EventArgs e)
-        {
+        private void btnMasterData_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<MasterDataUserControl>(pnlUCHandler);
-        }
 
-        private void btnRoom_Click(object sender, EventArgs e)
-        {
+        private void btnReports_Click(object sender, EventArgs e) =>
+            UIHelper.ShowView<ReportsUserControl>(pnlUCHandler);
+
+        private void btnRoom_Click(object sender, EventArgs e) =>
             UIHelper.ShowView<RoomManagementUserControl>(pnlUCHandler);
-        }
 
-        private void AdmissionUserControl_AdmissionCreated(object? sender, AdmissionCreatedEventArgs e)
-        {
+        private void AdmissionUserControl_AdmissionCreated(object? sender, AdmissionCreatedEventArgs e) =>
             ShowActiveAdmissions();
-        }
 
         private void ShowActiveAdmissions()
         {
@@ -134,14 +92,15 @@ namespace UI
                 return;
             }
 
-            var action = e.Action switch
-            {
-                ActiveAdmissionAction.Discharge => "Discharge",
-                _ => "Continue"
-            };
-            MessageBox.Show(this,
-                $"{action} for admission {e.AdmissionNo} will be available when its workflow screen is implemented.",
-                "Workflow screen not available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Form dialog = e.Action == ActiveAdmissionAction.AddCharges
+                ? new AddChargesForm(e.AdmissionId, e.AdmissionNo)
+                : new DischargeForm(e.AdmissionId, e.AdmissionNo);
+
+            using (dialog)
+                dialog.ShowDialog(this);
+
+            // Charges and discharges change the list, so reload it.
+            (sender as ActiveAdmissionsUserControl)?.RefreshAdmissions();
         }
     }
 }

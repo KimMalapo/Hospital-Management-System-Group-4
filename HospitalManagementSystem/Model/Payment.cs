@@ -1,5 +1,6 @@
 namespace Model;
 
+/// <summary>One payment on a bill.</summary>
 public class Payment
 {
     public int PaymentID { get; set; }

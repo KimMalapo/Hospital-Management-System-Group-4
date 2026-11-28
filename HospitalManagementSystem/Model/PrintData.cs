@@ -41,6 +41,7 @@ public class DischargeRecord
 /// <summary>Result of checking whether an admission can be discharged now.</summary>
 public record DischargeCheck(bool CanDischarge, string Message);
 
+/// <summary>The four numbers for the dashboard.</summary>
 public class DashboardCounts
 {
     public int ActiveAdmissions { get; set; }

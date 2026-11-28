@@ -1,9 +1,8 @@
 using BusinessLogic;
-using System;
-using System.Windows.Forms;
 
 namespace UI
 {
+    /// <summary>Login window. Checks the password, then opens the main screen.</summary>
     public partial class LoginForm : Form
     {
         public LoginForm()
@@ -24,40 +23,27 @@ namespace UI
             using var registerForm = new RegisterForm();
             registerForm.ShowDialog(this);
         }
-        // --- LOGIN BUTTON HOVER LOGIC ---
-        private void BtnLogin_MouseEnter(object? sender, EventArgs e)
-        {
+
+        private void BtnLogin_MouseEnter(object? sender, EventArgs e) =>
             btnLogin.BackColor = Color.FromArgb(70, 130, 255);
-        }
 
-        private void BtnLogin_MouseLeave(object? sender, EventArgs e)
-        {
+        private void BtnLogin_MouseLeave(object? sender, EventArgs e) =>
             btnLogin.BackColor = Color.FromArgb(52, 110, 245);
-        }
 
-        private void LinkRegister_MouseEnter(object? sender, EventArgs e)
-        {
+        private void LinkRegister_MouseEnter(object? sender, EventArgs e) =>
             linkRegister.LinkColor = Color.FromArgb(30, 80, 200);
-        }
 
-        private void LinkRegister_MouseLeave(object? sender, EventArgs e)
-        {
+        private void LinkRegister_MouseLeave(object? sender, EventArgs e) =>
             linkRegister.LinkColor = Color.FromArgb(52, 110, 245);
-        }
 
         private void btnLogin_Click(object? sender, EventArgs e)
-        {
-            BtnLogin_Click(sender, e);
-        }
-
-        private void BtnLogin_Click(object? sender, EventArgs e)
         {
             var username = txtUsername.Text.Trim();
             var password = txtPassword.Text;
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                MessageBox.Show("Please fill all fields.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                UIHelper.ShowWarning("Please fill all fields.", "Validation");
                 return;
             }
 
@@ -71,24 +57,23 @@ namespace UI
                 {
                     var token = new AuthService().CreateToken(username, result.Role);
                     SessionManager.SetToken(token);
-                    var main = new UILandingPage();
-                    main.Show();
-                    this.Hide();
+                    new UILandingPage().Show();
+                    Hide();
                 }
                 else
                 {
-                    MessageBox.Show("Invalid email/username or password.", "Authentication Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    UIHelper.ShowWarning("Invalid email/username or password.", "Authentication Failed");
                 }
             }
             catch (InvalidOperationException ex)
             {
                 Logger.Error("LoginForm: configuration error", ex);
-                MessageBox.Show(ex.Message, "Configuration", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError(ex.Message, "Configuration");
             }
             catch (Exception ex)
             {
                 Logger.Error("LoginForm: login failed while connecting to database", ex);
-                MessageBox.Show("Unable to sign in. Check the database connection and try again.", "Sign-in failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Unable to sign in. Check the database connection and try again.", "Sign-in failed");
             }
         }
 

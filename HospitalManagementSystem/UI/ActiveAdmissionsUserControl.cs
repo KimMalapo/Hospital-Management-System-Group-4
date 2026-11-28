@@ -9,6 +9,8 @@ public sealed partial class ActiveAdmissionsUserControl : UserControl
 {
     private AdmissionService? _admissionService;
 
+    private const string LoadFailedText = "Admissions could not be loaded. Check the database connection and try again.";
+
     public event EventHandler<ActiveAdmissionActionEventArgs>? ActionRequested;
 
     public ActiveAdmissionsUserControl()
@@ -55,7 +57,7 @@ public sealed partial class ActiveAdmissionsUserControl : UserControl
             _admissionsGrid.DataSource = null;
             _admissionsGrid.Visible = false;
             _emptyStatePanel.Visible = true;
-            _emptyState.Text = "Admissions could not be loaded. Check the database connection and try again.";
+            _emptyState.Text = LoadFailedText;
         }
     }
 
@@ -110,6 +112,7 @@ public sealed partial class ActiveAdmissionsUserControl : UserControl
     }
 }
 
+/// <summary>The buttons on each row of the list.</summary>
 public enum ActiveAdmissionAction
 {
     AddCharges,
@@ -117,6 +120,7 @@ public enum ActiveAdmissionAction
     Discharge
 }
 
+/// <summary>Which button was clicked, and for which admission.</summary>
 public sealed class ActiveAdmissionActionEventArgs(int admissionId, string admissionNo, ActiveAdmissionAction action) : EventArgs
 {
     public int AdmissionId { get; } = admissionId;

@@ -1,4 +1,3 @@
-using System;
 using BusinessLogic;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -19,22 +18,12 @@ namespace UI
 
         private static IConfiguration? _config;
 
-        private static IConfiguration Configuration
-        {
-            get
-            {
-                if (_config == null)
-                {
-                    _config = new ConfigurationBuilder()
-                        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
-                        .AddEnvironmentVariables()
-                        .Build();
-                }
-                return _config;
-            }
-        }
+        private static IConfiguration Configuration => _config ??= new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
 
         public static HospitalInfo GetHospitalInfo()
         {

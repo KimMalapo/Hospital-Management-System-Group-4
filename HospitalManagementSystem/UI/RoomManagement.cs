@@ -1,14 +1,12 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Text;
-using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
 using BusinessLogic;
 using Microsoft.VisualBasic;
-using System.IO;
 
 namespace UI
 {
+    /// <summary>Old room window. Nothing opens it now.</summary>
     public partial class RoomManagement : Form
     {
         private readonly RoomService? _service;
@@ -25,15 +23,18 @@ namespace UI
                 _lookupService = new LookupService(cs);
             }
 
-            // wire buttons
             this.btnAdd.Click += BtnAdd_Click;
             this.btnEdit.Click += BtnEdit_Click;
             this.btnDelete.Click += BtnDelete_Click;
             this.btnSearch.Click += BtnSearch_Click;
 
-            // initial load
             RefreshRoomList();
         }
+
+        // The four parallel lists that together show one room per row.
+        private ListView[] RoomLists => new[] { listRoomNo, listType, listRate, listStatus };
+
+        private static string PendingRoomsFile => Path.Combine(Path.GetTempPath(), "HMS_pending_rooms.txt");
 
         // Read room list
         public DataTable LoadRooms(string sql = "SELECT * FROM dbo.tblRoomTypes")
@@ -54,30 +55,18 @@ namespace UI
         {
             // If service is not available, persist the operation to a temp file for later reconciliation
             if (_service == null)
-            {
-                var ok = SaveToTempFile(insertSql, parameters);
-                return ok ? 1 : 0;
-            }
+                return SaveToTempFile(insertSql, parameters) ? 1 : 0;
 
             try
             {
-                return _service != null ? _service.CreateRoom(insertSql, parameters) : 0;
+                return _service.CreateRoom(insertSql, parameters);
             }
             catch (Exception ex)
             {
                 // On DB errors (connection, etc.) fall back to writing the pending operation to a temp file
                 Logger.Error("RoomManagement.CreateRoom: database error, saving to temp file", ex);
-                try
-                {
-                    SaveToTempFile(insertSql, parameters);
-                    return 1;
-                }
-                catch (Exception logEx)
-                {
-                    Logger.Error("RoomManagement.CreateRoom failed", logEx);
-                    // failed to persist to temp file as well
-                    return 0;
-                }
+                SaveToTempFile(insertSql, parameters);
+                return 1;
             }
         }
 
@@ -85,7 +74,6 @@ namespace UI
         {
             try
             {
-                var temp = Path.Combine(Path.GetTempPath(), "HMS_pending_rooms.txt");
                 var sb = new StringBuilder();
                 sb.AppendLine("=== " + DateTime.UtcNow.ToString("o") + " ===");
                 sb.AppendLine(sql);
@@ -97,7 +85,7 @@ namespace UI
                     }
                 }
                 sb.AppendLine();
-                File.AppendAllText(temp, sb.ToString());
+                File.AppendAllText(PendingRoomsFile, sb.ToString());
                 return true;
             }
             catch (Exception logEx)
@@ -107,69 +95,74 @@ namespace UI
             }
         }
 
+        private void AddRoomRow(string roomNo, string type, string rate, string status)
+        {
+            listRoomNo.Items.Add(roomNo);
+            listType.Items.Add(type);
+            listRate.Items.Add(rate);
+            listStatus.Items.Add(status);
+        }
+
         private void RefreshRoomList()
         {
             try
             {
-                listRoomNo.Items.Clear();
-                listType.Items.Clear();
-                listRate.Items.Clear();
-                listStatus.Items.Clear();
+                foreach (var list in RoomLists) list.Items.Clear();
 
                 if (_service != null)
-                {
-                    var dt = LoadRooms("SELECT RoomNo, Type, Rate, Status FROM dbo.tblRooms");
-                    foreach (DataRow r in dt.Rows)
-                    {
-                        listRoomNo.Items.Add(r["RoomNo"]?.ToString() ?? string.Empty);
-                        listType.Items.Add(r["Type"]?.ToString() ?? string.Empty);
-                        listRate.Items.Add(r["Rate"]?.ToString() ?? string.Empty);
-                        listStatus.Items.Add(r["Status"]?.ToString() ?? string.Empty);
-                    }
-                }
+                    LoadRoomRowsFromDatabase();
                 else
-                {
-                    // no DB - show pending entries from temp file if any
-                    var temp = Path.Combine(Path.GetTempPath(), "HMS_pending_rooms.txt");
-                    if (File.Exists(temp))
-                    {
-                        var content = File.ReadAllText(temp);
-                        var blocks = content.Split(new string[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var block in blocks)
-                        {
-                            // look for parameter lines like @roomNo=, @type=, @rate=, @status=
-                            string room = null, type = null, rate = null, status = null;
-                            var lines = block.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            foreach (var line in lines)
-                            {
-                                var idx = line.IndexOf('=');
-                                if (idx <= 0) continue;
-                                var key = line.Substring(0, idx).Trim();
-                                var val = line.Substring(idx + 1).Trim();
-                                switch (key.ToLowerInvariant())
-                                {
-                                    case "@roomno": room = val; break;
-                                    case "@type": type = val; break;
-                                    case "@rate": rate = val; break;
-                                    case "@status": status = val; break;
-                                }
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(room))
-                            {
-                                listRoomNo.Items.Add(room);
-                                listType.Items.Add(type ?? string.Empty);
-                                listRate.Items.Add(rate ?? string.Empty);
-                                listStatus.Items.Add(status ?? string.Empty);
-                            }
-                        }
-                    }
-                }
+                    LoadRoomRowsFromTempFile();
             }
             catch (Exception logEx)
             {
-                Logger.Error("RoomManagement.RefreshRoomList failed", logEx);
                 // ignore refresh errors to avoid crashing UI
+                Logger.Error("RoomManagement.RefreshRoomList failed", logEx);
+            }
+        }
+
+        private void LoadRoomRowsFromDatabase()
+        {
+            var rooms = LoadRooms("SELECT RoomNo, Type, Rate, Status FROM dbo.tblRooms");
+            foreach (DataRow r in rooms.Rows)
+            {
+                AddRoomRow(
+                    r["RoomNo"]?.ToString() ?? string.Empty,
+                    r["Type"]?.ToString() ?? string.Empty,
+                    r["Rate"]?.ToString() ?? string.Empty,
+                    r["Status"]?.ToString() ?? string.Empty);
+            }
+        }
+
+        // No DB - show pending entries from temp file if any
+        private void LoadRoomRowsFromTempFile()
+        {
+            if (!File.Exists(PendingRoomsFile)) return;
+
+            var content = File.ReadAllText(PendingRoomsFile);
+            var blocks = content.Split(new string[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var block in blocks)
+            {
+                // look for parameter lines like @roomNo=, @type=, @rate=, @status=
+                string? room = null, type = null, rate = null, status = null;
+                var lines = block.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
+                {
+                    var idx = line.IndexOf('=');
+                    if (idx <= 0) continue;
+                    var key = line.Substring(0, idx).Trim();
+                    var val = line.Substring(idx + 1).Trim();
+                    switch (key.ToLowerInvariant())
+                    {
+                        case "@roomno": room = val; break;
+                        case "@type": type = val; break;
+                        case "@rate": rate = val; break;
+                        case "@status": status = val; break;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(room))
+                    AddRoomRow(room, type ?? string.Empty, rate ?? string.Empty, status ?? string.Empty);
             }
         }
 
@@ -189,7 +182,6 @@ namespace UI
                 var sql = "INSERT INTO dbo.tblRooms (RoomNo, Type, Rate, Status) VALUES (@roomNo, @type, @rate, @status)";
                 var rows = CreateRoom(sql,
                     new SqlParameter("@roomNo", roomNo),
-
                     new SqlParameter("@type", type),
                     new SqlParameter("@rate", rate),
                     new SqlParameter("@status", status)
@@ -197,28 +189,21 @@ namespace UI
 
                 if (rows > 0)
                 {
-                    MessageBox.Show("Room added.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // refresh UI list immediately
+                    UIHelper.ShowInfo("Room added.", "Success");
                     if (_service != null)
                         RefreshRoomList();
                     else
-                    {
-                        // show the pending entry immediately
-                        listRoomNo.Items.Add(roomNo);
-                        listType.Items.Add(type);
-                        listRate.Items.Add(rate);
-                        listStatus.Items.Add(status);
-                    }
+                        AddRoomRow(roomNo, type, rate, status); // show the pending entry immediately
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UIHelper.ShowError("No rows affected.", "Error");
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error("RoomManagement: Error adding room", ex);
-                MessageBox.Show("Error adding room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Error adding room: " + ex.Message, "Error");
             }
         }
 
@@ -228,7 +213,7 @@ namespace UI
             {
                 if (listRoomNo.SelectedItems.Count == 0)
                 {
-                    MessageBox.Show("Select a room from the Room No. list to edit.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    UIHelper.ShowWarning("Select a room from the Room No. list to edit.", "Validation");
                     return;
                 }
 
@@ -239,11 +224,8 @@ namespace UI
                 var currentStatus = listStatus.Items.Count > selectedIndex ? listStatus.Items[selectedIndex].Text : string.Empty;
 
                 var type = Interaction.InputBox("Edit Room Type:", "Edit Room", currentType);
-                if (type == null) return;
                 var rate = Interaction.InputBox("Edit Rate:", "Edit Room", currentRate);
-                if (rate == null) return;
                 var status = Interaction.InputBox("Edit Status:", "Edit Room", currentStatus);
-                if (status == null) return;
                 var sql = "UPDATE dbo.tblRooms SET Type=@type, Rate=@rate, Status=@status WHERE RoomNo=@roomNo";
                 var rows = CreateRoom(sql,
                     new SqlParameter("@type", type),
@@ -254,7 +236,7 @@ namespace UI
 
                 if (rows > 0)
                 {
-                    MessageBox.Show("Room updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo("Room updated.", "Success");
                     if (_service != null)
                         RefreshRoomList();
                     else
@@ -267,13 +249,13 @@ namespace UI
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UIHelper.ShowError("No rows affected.", "Error");
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error("RoomManagement: Error updating room", ex);
-                MessageBox.Show("Error updating room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Error updating room: " + ex.Message, "Error");
             }
         }
 
@@ -283,7 +265,7 @@ namespace UI
             {
                 if (listRoomNo.SelectedItems.Count == 0)
                 {
-                    MessageBox.Show("Please select a room to delete.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo("Please select a room to delete.", "Information");
                     return;
                 }
 
@@ -298,30 +280,29 @@ namespace UI
                     // fallback - write delete SQL to temp file for later reconciliation
                     var sql = "DELETE FROM dbo.tblRooms WHERE RoomNo = @roomNo";
                     SaveToTempFile(sql, new SqlParameter[] { new SqlParameter("@roomNo", selected) });
-                    MessageBox.Show("Delete recorded for later execution (no DB connection).", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    // remove from lists visually
-                    if (listRoomNo.Items.Count > selectedIndex) listRoomNo.Items.RemoveAt(selectedIndex);
-                    if (listType.Items.Count > selectedIndex) listType.Items.RemoveAt(selectedIndex);
-                    if (listRate.Items.Count > selectedIndex) listRate.Items.RemoveAt(selectedIndex);
-                    if (listStatus.Items.Count > selectedIndex) listStatus.Items.RemoveAt(selectedIndex);
+                    UIHelper.ShowInfo("Delete recorded for later execution (no DB connection).", "Info");
+                    foreach (var list in RoomLists)
+                    {
+                        if (list.Items.Count > selectedIndex) list.Items.RemoveAt(selectedIndex);
+                    }
                     return;
                 }
 
                 var rows = _service.DeleteRoom(selected);
                 if (rows > 0)
                 {
-                    MessageBox.Show("Room deleted.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo("Room deleted.", "Success");
                     RefreshRoomList();
                 }
                 else
                 {
-                    MessageBox.Show("No rows affected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UIHelper.ShowError("No rows affected.", "Error");
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error("RoomManagement: Error deleting room", ex);
-                MessageBox.Show("Error deleting room: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Error deleting room: " + ex.Message, "Error");
             }
         }
 
@@ -329,16 +310,16 @@ namespace UI
         {
             try
             {
-                var searchTerm = txtSearch.Text?.Trim();
+                var searchTerm = txtSearch.Text.Trim();
                 if (string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    MessageBox.Show("Please enter a search term (Code or Name).", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    UIHelper.ShowWarning("Please enter a search term (Code or Name).", "Validation");
                     return;
                 }
 
                 if (_lookupService == null)
                 {
-                    MessageBox.Show("Search is not available without a database connection.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UIHelper.ShowError("Search is not available without a database connection.", "Error");
                     return;
                 }
 
@@ -347,30 +328,24 @@ namespace UI
 
                 if (results.Count == 0)
                 {
-                    MessageBox.Show("No matching records found.", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    UIHelper.ShowInfo("No matching records found.", "Search Results");
                     return;
                 }
 
-                // Display search results in the list views
-                listRoomNo.Items.Clear();
-                listType.Items.Clear();
-                listRate.Items.Clear();
-                listStatus.Items.Clear();
+                foreach (var list in RoomLists) list.Items.Clear();
 
                 foreach (var item in results)
                 {
-                    listRoomNo.Items.Add(item.Code ?? string.Empty);
-                    listType.Items.Add(item.Name ?? string.Empty);
-                    listRate.Items.Add(item.Status ?? string.Empty);
-                    listStatus.Items.Add(item.Notes ?? string.Empty);
+                    AddRoomRow(item.Code ?? string.Empty, item.Name ?? string.Empty,
+                        item.Status ?? string.Empty, item.Notes ?? string.Empty);
                 }
 
-                MessageBox.Show($"Found {results.Count} matching record(s).", "Search Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                UIHelper.ShowInfo($"Found {results.Count} matching record(s).", "Search Results");
             }
             catch (Exception ex)
             {
                 Logger.Error("RoomManagement: Error during search", ex);
-                MessageBox.Show("Error during search: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UIHelper.ShowError("Error during search: " + ex.Message, "Error");
             }
         }
     }

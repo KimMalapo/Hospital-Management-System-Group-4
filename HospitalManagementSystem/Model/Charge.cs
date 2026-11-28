@@ -1,5 +1,6 @@
 namespace Model;
 
+/// <summary>Something charged to an admission, like a lab test. Voided, never deleted.</summary>
 public class Charge
 {
     public int ChargeID { get; set; }

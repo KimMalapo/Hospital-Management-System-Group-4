@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace BusinessLogic
 {
+    /// <summary>Rooms: list, add, update, delete. The room type has to be active.</summary>
     public class RoomService
     {
         private readonly DbExecutor _db;
@@ -25,6 +26,18 @@ namespace BusinessLogic
             _db.QuerySP("usp_tblRooms_GetById",
                 new SqlParameter("@RoomNo", roomNo));
 
+        private void EnsureActiveRoomType(string roomTypeCode)
+        {
+            var isActive = _lookup.GetAll("RoomTypes").Any(t =>
+                t.Code != null &&
+                t.Code.Equals(roomTypeCode, StringComparison.OrdinalIgnoreCase) &&
+                t.Status == "Active" &&
+                !t.IsDeleted);
+
+            if (!isActive)
+                throw new InvalidOperationException($"Room type '{roomTypeCode}' does not exist or is not active");
+        }
+
         public int Create(string roomNo, string roomTypeCode, decimal rate, int capacity = 1)
         {
             if (string.IsNullOrWhiteSpace(roomNo))
@@ -34,15 +47,7 @@ namespace BusinessLogic
             if (capacity < 1)
                 throw new ArgumentException("Room capacity must be at least one bed.");
 
-            var types = _lookup.GetAll("RoomTypes");
-            var type = types.Find(t =>
-                t.Code != null &&
-                t.Code.Equals(roomTypeCode, StringComparison.OrdinalIgnoreCase) &&
-                t.Status == "Active" &&
-                !t.IsDeleted);
-
-            if (type == null)
-                throw new InvalidOperationException($"Room type '{roomTypeCode}' does not exist or is not active");
+            EnsureActiveRoomType(roomTypeCode);
 
             return _db.ExecuteSP("usp_tblRooms_Create",
                 new SqlParameter("@RoomNo", roomNo),
@@ -60,15 +65,7 @@ namespace BusinessLogic
             if (rate < 0) throw new ArgumentException("Rate must be 0 or greater");
             if (capacity < 1) throw new ArgumentException("Room capacity must be at least one bed.");
 
-            var types = _lookup.GetAll("RoomTypes");
-            var type = types.Find(t =>
-                t.Code != null &&
-                t.Code.Equals(roomTypeCode, StringComparison.OrdinalIgnoreCase) &&
-                t.Status == "Active" &&
-                !t.IsDeleted);
-
-            if (type == null)
-                throw new InvalidOperationException($"Room type '{roomTypeCode}' does not exist or is not active");
+            EnsureActiveRoomType(roomTypeCode);
 
             return _db.ExecuteSP("usp_tblRooms_Update",
                 new SqlParameter("@RoomNo", roomNo),

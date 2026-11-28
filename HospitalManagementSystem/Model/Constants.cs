@@ -1,5 +1,6 @@
 namespace Model;
 
+/// <summary>Allowed admission statuses.</summary>
 public static class AdmissionStatus
 {
     public const string Admitted = "Admitted";
@@ -8,6 +9,7 @@ public static class AdmissionStatus
     public static readonly string[] All = { Admitted, Discharged, Cancelled };
 }
 
+/// <summary>Allowed bill statuses.</summary>
 public static class BillStatus
 {
     public const string Open = "Open";
@@ -16,6 +18,7 @@ public static class BillStatus
     public const string Voided = "Voided";
 }
 
+/// <summary>Ways to pay. Anything but cash needs a reference number.</summary>
 public static class PaymentMethod
 {
     public const string Cash = "Cash";
@@ -31,6 +34,7 @@ public static class PaymentMethod
         !string.Equals(method, Cash, StringComparison.OrdinalIgnoreCase);
 }
 
+/// <summary>Groups a service can belong to.</summary>
 public static class ServiceCategory
 {
     public static readonly string[] All =

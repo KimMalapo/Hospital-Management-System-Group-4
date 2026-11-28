@@ -3,6 +3,7 @@ using Model;
 
 namespace BusinessLogic
 {
+    /// <summary>Drug categories like Antibiotics. Just uses LookupService.</summary>
     public class DrugCategoryService
     {
         private readonly LookupService _lookupService;

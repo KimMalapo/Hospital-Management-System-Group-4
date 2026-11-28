@@ -42,6 +42,7 @@
             btnHome = new Button();
             btnRoom = new Button();
             btnMasterData = new Button();
+            btnReports = new Button();
             btnAdmission = new Button();
             btnActiveAdmissions = new Button();
             btnBilling = new Button();
@@ -246,16 +247,16 @@
             btnMasterData.UseVisualStyleBackColor = true;
             btnMasterData.Click += btnMasterData_Click;
             // 
-            // btnServiceCatalog
+            // btnReports
             // 
-            btnServiceCatalog.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            btnServiceCatalog.Location = new Point(33, 678);
-            btnServiceCatalog.Name = "btnServiceCatalog";
-            btnServiceCatalog.Size = new Size(352, 52);
-            btnServiceCatalog.TabIndex = 13;
-            btnServiceCatalog.Text = "Service Catalog";
-            btnServiceCatalog.UseVisualStyleBackColor = true;
-            btnServiceCatalog.Click += btnServiceCatalog_Click;
+            btnReports.Font = new Font("Yu Gothic Medium", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnReports.Location = new Point(33, 682);
+            btnReports.Name = "btnReports";
+            btnReports.Size = new Size(352, 55);
+            btnReports.TabIndex = 20;
+            btnReports.Text = "Reports";
+            btnReports.UseVisualStyleBackColor = true;
+            btnReports.Click += btnReports_Click;
             // 
             // label5
             // 
@@ -294,6 +295,7 @@
             Controls.Add(label6);
             Controls.Add(label5);
             Controls.Add(btnMasterData);
+            Controls.Add(btnReports);
             Controls.Add(btnRoom);
             Controls.Add(btnHome);
             Controls.Add(label4);
@@ -326,6 +328,7 @@
         private Button btnHome;
         private Button btnRoom;
         private Button btnMasterData;
+        private Button btnReports;
         private Label label5;
         private Label label6;
         private Button button1;
